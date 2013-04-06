@@ -1,7 +1,7 @@
 <?php
 App::import('Lib', 'Uploadable.Image');
 App::import('Behavior', 'Uploadable.Uploadable');
-class ImageUploadableBehavior extends UploadBehavior {
+class ImageUploadableBehavior extends UploadableBehavior {
 	function setup(&$Model, $settings = array()) {
 		$settings['exts'] = array('gif', 'jpg', 'jpeg', 'png');
 		return parent::setup($Model, $settings);
