@@ -224,7 +224,6 @@ class UploadableBehavior extends ModelBehavior {
 	 **/
 	function _updateModel(&$Model, $reset = false) {
 		if ($updateCols = Param::keyCheck($this->settings[$Model->alias], 'update')) {
-			
 			$data = array('id' => $Model->id);
 			$options = $this->buildAfterFileSaveInfo($Model);
 			foreach ($updateCols as $val => $col) {
@@ -269,7 +268,7 @@ class UploadableBehavior extends ModelBehavior {
 				$name .= $this->settings[$Model->alias]['set_random_path'];
 			}
 			$name .= $options['filename'];
-			return $name;
+			return str_replace('\\','/', $name);
 		} else if ($value == 'ext') {
 			return $options['ext'];
 		} else if ($value == 'dir') {
@@ -351,7 +350,6 @@ class UploadableBehavior extends ModelBehavior {
 					$this->_error('Upload file directory, ' . $dir . ' does not exist and could not be created');
 				}
 			}
-			
 			//Removes existing file
 			if (!empty($options['old_filename'])) {
 				$oldFile = $dir . $options['old_filename'];
@@ -359,10 +357,8 @@ class UploadableBehavior extends ModelBehavior {
 					unlink($oldFile);
 				}
 			}
-
-			
 			$dst = $dir . $filename;
-			
+			$this->_log("Copying File from $tmp to $dst");
 			if (!$this->copyUploadedFile($tmp, $dst, $conversionRules)) {
 				$this->_error("Could not upload file $filename to directory $dir");
 				return false;
@@ -379,17 +375,14 @@ class UploadableBehavior extends ModelBehavior {
 				'location' => $dst,
 			);
 			$Model->uploadedFiles[] = $successInfo;
-			
 			//Only saves file info on the first directory
 			if (empty($savedDirSettings)) {
 				$this->settings[$Model->alias]['success'] = $successInfo;
 				$savedDirSettings = true;
 			}
 		}		
-		
 		return $this->afterFileSave($Model);
 	}
-
 	
 	/**
 	 * Returns a new filename for the uploaded file
@@ -436,14 +429,21 @@ class UploadableBehavior extends ModelBehavior {
 	}
 	
 	function getRoot(&$Model, $options = array()) {
+		$hasPlugin = false;
+		if (!empty($this->settings[$Model->alias]['plugin'])) {
+			if ($hasPlugin = $this->settings[$Model->alias]['plugin']) {
+				$pluginRoot = APP . 'Plugin/' . $this->settings[$Model->alias]['plugin'] . '/';
+			}
+		}
+		
 		if (!empty($this->settings[$Model->alias]['root'])) {
 			$root = $this->settings[$Model->alias]['root'];
 			if ($root == 'web') {
-				return WWW_ROOT;
+				return $hasPlugin ? $pluginRoot . 'webroot/' : WWW_ROOT;
 			} else if ($root == 'app') {
-				return APP;
+				return $hasPlugin ? $pluginRoot : APP;
 			} else if ($root == 'image') {
-				return IMAGES;
+				return $hasPlugin ? $pluginRoot . 'webroot/img/' : IMAGES;
 			}
 		}
 		return '';

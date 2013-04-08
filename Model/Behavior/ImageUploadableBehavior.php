@@ -64,6 +64,10 @@ class ImageUploadableBehavior extends UploadableBehavior {
 		$Dst = new File($dst);
 
 		$img = Image::createFromFile($src);
+		if (!$img) {
+			return false;
+		}
+		
 		$ext = $Src->ext();
 		if (!empty($options['convert'])) {
 			$ext = $options['convert'];
