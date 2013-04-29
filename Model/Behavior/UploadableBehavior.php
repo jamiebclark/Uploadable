@@ -168,9 +168,8 @@ class UploadableBehavior extends ModelBehavior {
 		
 		$uploadVar = $settings['upload_var'];
 		$deleteVar = Param::keyCheck($settings, 'delete_var');
-
 		//Uploads file (if success is not true, meaning the file has been saved once already)
-		if (!empty($data[$uploadVar]) && empty($settings['success'])) {
+		if (!empty($data[$uploadVar]['tmp_name']) && empty($settings['success'])) {
 			$options = array();
 			
 			if (!$created) {
