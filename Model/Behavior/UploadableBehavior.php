@@ -124,6 +124,7 @@ class UploadableBehavior extends ModelBehavior {
 		if ($root) {
 			$dir = $this->getRoot($Model) . $dir;
 		}
+		debug(compact('subDir','root','dir'));
 		return $dir;
 	}
 
