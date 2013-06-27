@@ -38,7 +38,6 @@ class ImageUploadableBehavior extends UploadableBehavior {
 	//Resaves an image. Used in case you change your save directory formatting parameters
 	function refreshUpload(&$Model, $id, $dir = null) {
 		$settings =& $this->settings[$Model->alias];
-		$tmpDir = '/home/baryaf/tmp/';
 		$tmpDir = $this->__getUploadDir($Model) . 'tmp_copy_dir' . DS;
 		if (!is_dir($tmpDir)) {
 			mkdir($tmpDir);
@@ -92,7 +91,7 @@ class ImageUploadableBehavior extends UploadableBehavior {
 		$dstDir = $Dst->Folder->path . DS;
 		$dstName = $Dst->name() . '.' . $Dst->ext();
 
-		
+		debug(compact('ext', 'dstDir', 'dstName'));
 		if (!is_dir( $dstDir)) {
 			if (!mkdir($dstDir, 0777, true)) {
 				$this->_error('Upload image directory, ' . $dstDir . ' does not exist and could not be created');
