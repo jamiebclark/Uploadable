@@ -444,6 +444,7 @@ class UploadableBehavior extends ModelBehavior {
 			} else if ($root == 'image') {
 				return $hasPlugin ? $pluginRoot . 'webroot/img/' : IMAGES;
 			}
+			return $root;
 		}
 		return '';
 	}
