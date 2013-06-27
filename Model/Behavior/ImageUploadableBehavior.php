@@ -91,7 +91,6 @@ class ImageUploadableBehavior extends UploadableBehavior {
 		$dstDir = $Dst->Folder->path . DS;
 		$dstName = $Dst->name() . '.' . $Dst->ext();
 
-		debug(compact('ext', 'dstDir', 'dstName'));
 		if (!is_dir( $dstDir)) {
 			if (!mkdir($dstDir, 0777, true)) {
 				$this->_error('Upload image directory, ' . $dstDir . ' does not exist and could not be created');
