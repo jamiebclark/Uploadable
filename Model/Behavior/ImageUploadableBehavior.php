@@ -46,6 +46,8 @@ class ImageUploadableBehavior extends UploadableBehavior {
 		$imgFile = $this->getImageFilename($Model, $id, $dir, true);
 		$dstFile = $tmpDir . $Model->alias . '-copy-' . $id . '.jpg';
 
+		debug(compact('imgFile', 'dstFile'));
+		
 		if (is_file($imgFile) && copy($imgFile, $dstFile)) {
 			$result = $this->saveImage($Model, $id, $dstFile);
 			unlink($dstFile);
