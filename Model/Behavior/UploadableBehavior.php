@@ -20,6 +20,7 @@ class UploadableBehavior extends ModelBehavior {
 			'upload_dir' =>		'files/tmp/',		//Directory to upload the files
 			'upload_var' => 	'add_file',			//The variable name to check for in the data
 			'delete_var' => 	'delete_file',		//The variable name to check for removal of existing file
+			'auto_upload_dir' => false,				//A directory to look for automatically upload
 			
 			'exts' =>			false,				//Array of allowed extensions
 			//Extensions not allowed upload
@@ -214,6 +215,52 @@ class UploadableBehavior extends ModelBehavior {
 		//Resets all updated columns to blank
 		$this->_updateModel($Model, true);
 		return true;
+	}
+	
+	function scanAutoUploadDirectory($Model, $dir = null, $email = null) {
+		/*
+		$dir = '/home/baryaf/hairandfaces.net/app/webroot/img/upload/';
+		$email = 'jamie@souperbowl.org';
+		*/
+		$settings =& $this->settings[$Model->alias];
+		if (empty($dir)) {
+			$dir = $settings['auto_upload_dir'];
+		}
+		if (empty($email)) {
+			$email = $settings['auto_upload_email'];
+		}
+		
+		$msg = "Auto uploaded images detected\n";
+		$success = $failed = $count = 0;
+		if (!is_dir($dir)) {
+			throw new Exception("$dir is not a valid directory. Could not open");
+		} 
+		$handle = opendir($dir);
+		while (($file = readdir($handle)) !== false) {
+			if ($file != '.' && $file != '..') {
+				$count++;
+				
+				$img = $dir . $file;
+				$Model->create();
+				$success = $Model->saveImage(null, $img);
+				
+				$msg .= "$file uploaded: " . ($success ? 'SUCCESS' : 'FAILED') . "\n";
+				if ($success) {
+					unlink($img);
+				}
+			}
+		}
+		$controller = Inflector::tableize($Model->alias);
+		$msg .= "\n\n" . Router::url(compact('controller') + array('action' => 'index', 'admin' => true), true);
+		if (!empty($count)) {
+			$msg = "$count emails detected. $success Successful, $failed Failed.\n\n" . $msg;
+			if (!empty($email)) {
+				mail($email, 'Uploaded files to the website', $msg);
+			}
+		} else {
+			$msg = 'No images detected';
+		}
+		return $msg;
 	}
 	
 	/**
