@@ -228,7 +228,7 @@ class UploadableBehavior extends ModelBehavior {
 		}
 		
 		$msg = "Auto uploaded images detected\n";
-		$success = $failed = $count = 0;
+		$successCount = $failedCount = $count = 0;
 		if (!is_dir($dir)) {
 			throw new Exception("$dir is not a valid directory. Could not open");
 		} 
@@ -243,14 +243,17 @@ class UploadableBehavior extends ModelBehavior {
 				
 				$msg .= "$file uploaded: " . ($success ? 'SUCCESS' : 'FAILED') . "\n";
 				if ($success) {
+					$successCount++;
 					unlink($img);
+				} else {
+					$failedCount++;
 				}
 			}
 		}
 		$controller = Inflector::tableize($Model->alias);
 		$msg .= "\n\n" . Router::url(compact('controller') + array('action' => 'index', 'admin' => true), true);
 		if (!empty($count)) {
-			$msg = "$count emails detected. $success Successful, $failed Failed.\n\n" . $msg;
+			$msg = "$count files found. $successCount Successful, $failedCount Failed.\n\n" . $msg;
 			if (!empty($email)) {
 				mail($email, 'Uploaded files to the website', $msg);
 			}
