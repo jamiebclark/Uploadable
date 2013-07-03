@@ -218,10 +218,7 @@ class UploadableBehavior extends ModelBehavior {
 	}
 	
 	function scanAutoUploadDirectory($Model, $dir = null, $email = null) {
-		/*
-		$dir = '/home/baryaf/hairandfaces.net/app/webroot/img/upload/';
-		$email = 'jamie@souperbowl.org';
-		*/
+		App::uses('Router', 'Routing');
 		$settings =& $this->settings[$Model->alias];
 		if (empty($dir)) {
 			$dir = $settings['auto_upload_dir'];
