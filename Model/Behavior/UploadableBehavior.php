@@ -100,7 +100,7 @@ class UploadableBehavior extends ModelBehavior {
 			} else if (!empty($settings['exts']) && (!in_array($ext, $settings['exts']))) {
 				$errMsg[] = 'Invalid file type: ' . $ext;
 			}
-			
+
 			if (!empty($errMsg)) {
 				$this->_log($errMsg);
 				$Model->invalidate($uploadVar, implode(', ', $errMsg));
@@ -147,6 +147,7 @@ class UploadableBehavior extends ModelBehavior {
 		$settings = $this->settings[$Model->alias];
 		$data =& $Model->data[$Model->alias];
 		//Doesn't save if file doesn't exist
+		$this->_log($data);
 		if (empty($data[$uploadVar]) || !$this->_isUploadedFile($Model, $data[$uploadVar])) {
 			unset($data[$uploadVar]);
 			
