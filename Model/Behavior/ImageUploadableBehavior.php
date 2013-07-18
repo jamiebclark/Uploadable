@@ -42,6 +42,10 @@ class ImageUploadableBehavior extends UploadableBehavior {
 		if (!is_dir($tmpDir)) {
 			mkdir($tmpDir);
 		}
+		if (!is_dir($tmpDir)) {
+			throw new Exception('Could not create temporary directory for refresh: ' . $tmpDir);
+			return false;
+		}
 		
 		$imgFile = $this->getImageFilename($Model, $id, $dir, true);
 		$dstFile = $tmpDir . $Model->alias . '-copy-' . $id . '.jpg';
