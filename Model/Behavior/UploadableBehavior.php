@@ -234,7 +234,7 @@ class UploadableBehavior extends ModelBehavior {
 		} 
 		$handle = opendir($dir);
 		while (($file = readdir($handle)) !== false) {
-			if ($file != '.' && $file != '..') {
+			if ($file != '.' && $file != '..' && file != 'empty') {
 				$count++;
 				
 				$img = $dir . $file;
