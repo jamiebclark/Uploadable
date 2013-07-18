@@ -235,7 +235,7 @@ class UploadableBehavior extends ModelBehavior {
 		} 
 		$handle = opendir($dir);
 		while (($file = readdir($handle)) !== false) {
-			if ($file != '.' && $file != '..') {
+			if ($file != '.' && $file != '..' && file != 'empty') {
 				$count++;
 				
 				$img = $dir . $file;
@@ -547,7 +547,6 @@ class UploadableBehavior extends ModelBehavior {
 		$Model->id = $id;
 		$result = $Model->read();
 		$settings =& $this->settings[$Model->alias];
-
 		//Retrieves file using database filename column
 		if ($filenameCol = Param::keyValCheck($settings['update'], 'filename')) {
 			$dirs = $this->getDirs($Model, array('no_random' => true));
