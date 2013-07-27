@@ -555,7 +555,9 @@ class UploadableBehavior extends ModelBehavior {
 				if (is_int($dir)) {
 					$dir = $rules;
 				}
-				$files[] = $dir . $result[$Model->alias][$filenameCol];
+				if (!empty($result[$Model->alias][$filenameCol])) {
+					$files[] = $dir . $result[$Model->alias][$filenameCol];
+				}
 			}
 			return $files;
 		}
