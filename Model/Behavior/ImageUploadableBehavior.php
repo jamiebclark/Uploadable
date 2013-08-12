@@ -12,7 +12,8 @@ class ImageUploadableBehavior extends UploadableBehavior {
 		$settings =& $this->settings[$Model->alias];
 		$uploadVar = $settings['upload_var'];
 
-		$settings['bypass_is_uploaded'] = true;
+		$Model->checkIsUploaded(false);
+		
 		$data = array(
 			'id' => $id,
 			$uploadVar => array(

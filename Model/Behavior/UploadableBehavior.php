@@ -349,6 +349,10 @@ class UploadableBehavior extends ModelBehavior {
 		}		
 	}
 	
+	function checkIsUploaded(&$Model, $set = true) {
+		$this->settings[$Model->alias]['bypass_is_uploaded'] = !$set;
+	}
+	
 	/**
 	 * Uploads a passed array of info
 	 *
