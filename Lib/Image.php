@@ -301,7 +301,20 @@ class Image {
 			$bgColor = imagecolorallocate($imgDst,0xF8,0xF8,0xF8);
 		}
 		
+		$filename = str_replace(array('\\', '/'), DS, $filename);
 		$imgSrc = imagecreatefromjpeg($filename);
+		if (!$imgSrc) {
+			$fh = fopen($filename, 'rb');
+			$str = '';
+			while ($fh !== false && !feof($fh)) {
+				$str .= fread($fh, 1024);
+			}
+			$imgSrc = @imagecreatefromstring($str);
+			if (!$imgSrc) {
+				throw new Exception("Could not create source image resource from: $filename.");
+			}
+		}
+		
 		$srcW = $dstW / $srcScale;
 		$srcH = $dstH / $srcScale;
 		$srcXConvert = $srcX / $srcScale;
