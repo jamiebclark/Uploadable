@@ -14,6 +14,8 @@ class UploadableBehavior extends ModelBehavior {
 		'Failed to write file to disk.',
 		'A PHP extension stopped the file upload.'
 	); 
+
+	private $_verboseDebug = false;
 	
 	function setup(&$Model, $settings = array()) {
 		$default = array(
@@ -620,9 +622,15 @@ class UploadableBehavior extends ModelBehavior {
 		$this->errors[] = $msg;
 		trigger_error($msg, E_USER_WARNING);
 	}
+
+	function setUploadableVerboseDebug($Model, $set = true) {
+		$this->_verboseDebug = $set;
+	}
 	
 	function _log($msg) {
 		//FireCake::log($msg);
-		//debug($msg);
+		if ($this->_verboseDebug) {
+			debug($msg);
+		}
 	}
 }
