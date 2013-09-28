@@ -632,7 +632,10 @@ class UploadableBehavior extends ModelBehavior {
 		if ($this->_verboseDebug) {
 			$bt = debug_backtrace();
 			$caller = array_shift($bt);
-			debug("{$caller['file']} on Line {$caller['line']}: $msg");
+			debug(array(
+				'Caller' => "{$caller['file']} on Line {$caller['line']}",
+				'Message' => $msg,
+			));
 		}
 	}
 }
