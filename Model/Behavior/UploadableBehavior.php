@@ -631,7 +631,7 @@ class UploadableBehavior extends ModelBehavior {
 		//FireCake::log($msg);
 		if ($this->_verboseDebug) {
 			$bt = debug_backtrace();
-			$calleder = array_shift($bt);
+			$caller = array_shift($bt);
 			debug("{$caller['file']} on Line {$caller['line']}: $msg");
 		}
 	}
