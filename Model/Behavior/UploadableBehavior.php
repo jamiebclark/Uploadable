@@ -112,38 +112,7 @@ class UploadableBehavior extends ModelBehavior {
 		return true;
 	}
 	
-	function getUploadDir(Model $Model, $subDir = null, $root = false) {
-		$dir = $this->settings[$Model->alias]['upload_dir'];
-		if (!empty($subDir) && !empty($this->settings[$Model->alias]['dirs'])) {
-			$dirs = $this->settings[$Model->alias]['dirs'];
-			if (!empty($dirs[$subDir]) || !empty($dirs[$subDir . '/'])) {
-				$dir .= $subDir . '/';
-			}
-		}
-		//if ($this->settings[$Model->alias]['upload_dir'] == 'web') {
-		if (substr($dir,0,1) != '/') {
-			$dir = '/' . $dir;
-		}
-		if ($root) {
-			$dir = $this->getRoot($Model) . $dir;
-		}
-		return $dir;
-	}
-
-	function hasUploadedFile($Model) {
-		$uploadVar = $this->settings[$Model->alias]['upload_var'];
-		if (!empty($Model->data[$Model->alias])) {
-			$data =& $Model->data[$Model->alias];
-		} else {
-			$data =& $Model->data;
-		}
-		if (empty($data[$uploadVar])) {
-			return false;
-		} else {
-			return $this->_isUploadedFile($Model, $data[$uploadVar]);
-		}
-	}
-		
+	#region Callbacks
 	function beforeSave(Model $Model, $options = array()) {
 		$uploadVar = $this->settings[$Model->alias]['upload_var'];
 		$settings = $this->settings[$Model->alias];
@@ -204,6 +173,7 @@ class UploadableBehavior extends ModelBehavior {
 		return true;
 	}
 
+	//Custom Callbacks
 	function beforeFileSave(Model $Model) {
 		return true;
 	}
@@ -218,8 +188,92 @@ class UploadableBehavior extends ModelBehavior {
 		//Resets all updated columns to blank
 		$this->_updateModel($Model, true);
 		return true;
+	}	
+	#endregion
+	
+	#region Public Functions
+	//Manually saves the file to the system, bypassing the need to upload it
+	public function saveUpload(Model $Model, $id, $file, $saveOptions = array()) {
+		$settings =& $this->settings[$Model->alias];
+		$uploadVar = $settings['upload_var'];
+		
+		$Model->checkIsUploaded(false);
+		$data = array(
+			'id' => $id,
+			$uploadVar => array(
+				'tmp_name' => $file,
+				'name' => 'UploadImage.jpg',
+				'errors' => 0,
+			),
+		);
+		$Model->create();
+		$Model->id = $id;
+		return $Model->save($data, $saveOptions);
 	}
 	
+	//Returns the file name and path of the image
+	public function getUploadFilename(Model $Model, $id, $dir = null, $root = false) {
+		$settings =& $this->settings[$Model->alias];
+		$fileField = !empty($settings['update']['filename']) ? $settings['update']['filename'] : 'filename';
+		$result = $Model->read(null, $id);
+		$filename = $this->__getUploadDir($Model, compact('dir'), $root) . $result[$Model->alias][$fileField];
+		return $filename;
+	}
+
+	//Resaves an uploaded file. Used in case you change your save directory formatting parameters
+	public function refreshUpload(Model $Model, $id, $dir = null) {
+		$settings =& $this->settings[$Model->alias];
+		$tmpDir = $this->__getUploadDir($Model) . 'tmp_copy_dir' . DS;
+		if (!is_dir($tmpDir)) {
+			mkdir($tmpDir);
+		}
+		if (!is_dir($tmpDir)) {
+			throw new Exception('Could not create temporary directory for refresh: ' . $tmpDir);
+			return false;
+		}
+		$srcFile = $this->getUploadFilename($Model, $id, $dir, true);
+		$dstFile = $tmpDir . $Model->alias . '-copy-' . $id . '.jpg';
+		if (is_file($srcFile) && copy($srcFile, $dstFile)) {
+			$result = $this->saveUpload($Model, $id, $dstFile);
+			unlink($dstFile);
+			return $result;
+		}
+		return null;
+	}
+	
+	public function getUploadDir(Model $Model, $subDir = null, $root = false) {
+		$dir = $this->settings[$Model->alias]['upload_dir'];
+		if (!empty($subDir) && !empty($this->settings[$Model->alias]['dirs'])) {
+			$dirs = $this->settings[$Model->alias]['dirs'];
+			if (!empty($dirs[$subDir]) || !empty($dirs[$subDir . '/'])) {
+				$dir .= $subDir . '/';
+			}
+		}
+		//if ($this->settings[$Model->alias]['upload_dir'] == 'web') {
+		if (substr($dir,0,1) != '/') {
+			$dir = '/' . $dir;
+		}
+		if ($root) {
+			$dir = $this->getRoot($Model) . $dir;
+		}
+		return $dir;
+	}
+	#endregion
+
+	function hasUploadedFile($Model) {
+		$uploadVar = $this->settings[$Model->alias]['upload_var'];
+		if (!empty($Model->data[$Model->alias])) {
+			$data =& $Model->data[$Model->alias];
+		} else {
+			$data =& $Model->data;
+		}
+		if (empty($data[$uploadVar])) {
+			return false;
+		} else {
+			return $this->_isUploadedFile($Model, $data[$uploadVar]);
+		}
+	}
+		
 	function scanAutoUploadDirectory($Model, $dir = null, $email = null) {
 		App::uses('Router', 'Routing');
 		$settings =& $this->settings[$Model->alias];
@@ -410,8 +464,11 @@ class UploadableBehavior extends ModelBehavior {
 					unlink($oldFile);
 				}
 			}
+			$tmp = $this->_dsFixFile($tmp);
+			$dir = $this->_dsFixFile($dir);
+			$filename = $this->_dsFixFile($filename);
+			
 			$dst = $dir . $filename;
-			$this->_log("Copying File from $tmp to $dst");
 			if (!$this->copyUploadedFile($tmp, $dst, $conversionRules)) {
 				$this->_error("Could not upload file $filename to directory $dir");
 				return false;
@@ -546,7 +603,11 @@ class UploadableBehavior extends ModelBehavior {
 	 **/
 	function copyUploadedFile($src, $dst, $options = array()) {
 		$Src = new File($src);
-		return $Src->copy($dst, true);
+		$success = $Src->copy($dst, true);
+		if (!$success) {
+			debug($Src->errors());
+		}
+		return $success;
 	}
 	
 	function _findFile(Model $Model, $id) {
@@ -571,6 +632,15 @@ class UploadableBehavior extends ModelBehavior {
 		return false;
 	}
 
+	//Fixes issues with multiple types of directory separators in a filename
+	private function _dsFixFile($filename) {
+		$ds = DS;
+		$notDs = DS == '/' ? '\\' : '/';
+		$filename = str_replace($notDs, $ds, $filename);
+		$filename = str_replace($ds . $ds, $ds, $filename);
+		return $filename;
+	}
+	
 	/**
 	 * Builds a semi random path based on the id to avoid having thousands of files
 	 * or directories in one directory. This would result in a slowdown on most file systems.
@@ -623,7 +693,7 @@ class UploadableBehavior extends ModelBehavior {
 		trigger_error($msg, E_USER_WARNING);
 	}
 
-	function setUploadableVerboseDebug($Model, $set = true) {
+	public function setUploadableVerboseDebug($Model, $set = true) {
 		$this->_verboseDebug = $set;
 	}
 	

@@ -3,8 +3,6 @@
 	Created 1/31/2011
 	Functions used for extending the basic PHP image functions
 */
-ini_set("memory_limit","128M");
-
 class Image {
 
 /**
@@ -37,6 +35,7 @@ class Image {
 	}
 	
 	function createFromFile($filename) {
+		ini_set("memory_limit", "256M");
 		$self =& Image::getInstance();
 
 	//Generates an image resource based on a variety of image types
