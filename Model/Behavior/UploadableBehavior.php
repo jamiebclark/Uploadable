@@ -17,7 +17,7 @@ class UploadableBehavior extends ModelBehavior {
 
 	private $_verboseDebug = false;
 	
-	function setup(&$Model, $settings = array()) {
+	function setup(Model $Model, $settings = array()) {
 		$default = array(
 			'upload_dir' =>		'files/tmp/',		//Directory to upload the files
 			'upload_var' => 	'add_file',			//The variable name to check for in the data
@@ -61,7 +61,7 @@ class UploadableBehavior extends ModelBehavior {
 		}
 	}
 	
-	function beforeValidate(&$Model) {
+	function beforeValidate(Model $Model, $options = array()) {
 		$uploadVar = $this->settings[$Model->alias]['upload_var'];
 		$settings = $this->settings[$Model->alias];
 		$created = empty($Model->data[$Model->alias][$Model->primaryKey]);
@@ -112,7 +112,7 @@ class UploadableBehavior extends ModelBehavior {
 		return true;
 	}
 	
-	function getUploadDir(&$Model, $subDir = null, $root = false) {
+	function getUploadDir(Model $Model, $subDir = null, $root = false) {
 		$dir = $this->settings[$Model->alias]['upload_dir'];
 		if (!empty($subDir) && !empty($this->settings[$Model->alias]['dirs'])) {
 			$dirs = $this->settings[$Model->alias]['dirs'];
@@ -144,7 +144,7 @@ class UploadableBehavior extends ModelBehavior {
 		}
 	}
 		
-	function beforeSave(&$Model, $options) {
+	function beforeSave(Model $Model, $options = array()) {
 		$uploadVar = $this->settings[$Model->alias]['upload_var'];
 		$settings = $this->settings[$Model->alias];
 		$data =& $Model->data[$Model->alias];
@@ -165,7 +165,7 @@ class UploadableBehavior extends ModelBehavior {
 		return true;
 	}
 	
-	function afterSave(&$Model, $created) {
+	function afterSave(Model $Model, $created, $options = array()) {
 		//Looks to see if a file was passed as well
 		$settings =& $this->settings[$Model->alias];
 		$data =& $Model->data[$Model->alias];
@@ -198,23 +198,23 @@ class UploadableBehavior extends ModelBehavior {
 		return true;
 	}
 	
-	function beforeDelete(&$Model, $cascade) {
+	function beforeDelete(Model $Model, $cascade = true) {
 		//Removes associated files as well
 		$this->deleteFile($Model, $Model->id);
 		return true;
 	}
 
-	function beforeFileSave(&$Model) {
+	function beforeFileSave(Model $Model) {
 		return true;
 	}
 	
-	function afterFileSave(&$Model) {
+	function afterFileSave(Model $Model) {
 		$this->_updateModel($Model);
 		unset($this->settings[$Model->alias]['success']);
 		return true;
 	}
 	
-	function afterFileDelete(&$Model) {
+	function afterFileDelete(Model $Model) {
 		//Resets all updated columns to blank
 		$this->_updateModel($Model, true);
 		return true;
@@ -271,7 +271,7 @@ class UploadableBehavior extends ModelBehavior {
 	 * Uses information stored in the 'update' array in settings
 	 * @param Boolean $reset If true, sets all update columns to blank
 	 **/
-	function _updateModel(&$Model, $reset = false) {
+	function _updateModel(Model $Model, $reset = false) {
 		if ($updateCols = Param::keyCheck($this->settings[$Model->alias], 'update')) {
 			$data = array('id' => $Model->id);
 			$options = $this->buildAfterFileSaveInfo($Model);
@@ -300,7 +300,7 @@ class UploadableBehavior extends ModelBehavior {
 		}
 	}
 
-	function buildAfterFileSaveInfo(&$Model) {
+	function buildAfterFileSaveInfo(Model $Model) {
 		if (isset($this->settings[$Model->alias]['success'])) {
 			return $this->settings[$Model->alias]['success'];
 		} else {
@@ -308,7 +308,7 @@ class UploadableBehavior extends ModelBehavior {
 		}
 	}
 	
-	function afterFileSaveCheck(&$Model, $value, $options = array()) {
+	function afterFileSaveCheck(Model $Model, $value, $options = array()) {
 		if ($value == 'type') {
 			return $options['type'];
 		} else if ($value == 'filename') {
@@ -334,7 +334,7 @@ class UploadableBehavior extends ModelBehavior {
 		}
 	}
 	
-	function deleteFile(&$Model, $id) {
+	function deleteFile(Model $Model, $id) {
 		if ($filenames = $this->_findFile($Model, $id)) {
 			if (!is_array($filenames)) {
 				unlink($filenames);
@@ -351,7 +351,7 @@ class UploadableBehavior extends ModelBehavior {
 		}		
 	}
 	
-	function checkIsUploaded(&$Model, $set = true) {
+	function checkIsUploaded(Model $Model, $set = true) {
 		$this->settings[$Model->alias]['bypass_is_uploaded'] = !$set;
 	}
 	
@@ -361,7 +361,7 @@ class UploadableBehavior extends ModelBehavior {
 	 * @param array $uploadArray The passed array from $this->data
 	 * @param array $options Additional formatting options
 	 **/
-	function uploadFile(&$Model, $uploadArray, $options = null) {
+	function uploadFile(Model $Model, $uploadArray, $options = null) {
 		//Makes sure there is something to upload
 		if (!$this->_isUploadedFile($Model, $uploadArray)) {
 			return false;
@@ -441,7 +441,7 @@ class UploadableBehavior extends ModelBehavior {
 	 * Returns a new filename for the uploaded file
 	 *
 	 **/
-	function getFilename(&$Model, $uploadArray) {
+	function getFilename(Model $Model, $uploadArray) {
 		$filenameRule = Param::keyCheck($this->settings[$Model->alias], 'filename_rule');
 		$filenameMatch = Param::keyCheck($this->settings[$Model->alias], 'filename_match');
 		
@@ -463,7 +463,7 @@ class UploadableBehavior extends ModelBehavior {
 	 * Internal getter for the current upload directory
 	 *
 	 **/
-	function __getUploadDir(&$Model, $options = array()) {
+	function __getUploadDir(Model $Model, $options = array()) {
 		if (!empty($options['upload_dir'])) {
 			$uploadDir = $options['upload_dir'];
 		} else if (empty($this->settings[$Model->alias]['upload_dir'])) {
@@ -481,7 +481,7 @@ class UploadableBehavior extends ModelBehavior {
 		return $uploadDir;
 	}
 	
-	function getRoot(&$Model, $options = array()) {
+	function getRoot(Model $Model, $options = array()) {
 		$hasPlugin = false;
 		if (!empty($this->settings[$Model->alias]['plugin'])) {
 			if ($hasPlugin = $this->settings[$Model->alias]['plugin']) {
@@ -503,7 +503,7 @@ class UploadableBehavior extends ModelBehavior {
 		return '';
 	}
 	
-	function getDirs(&$Model, $options = array()) {
+	function getDirs(Model $Model, $options = array()) {
 		if (!($uploadDir = $this->__getUploadDir($Model, $options))) {
 			return false;
 		}	
@@ -549,7 +549,7 @@ class UploadableBehavior extends ModelBehavior {
 		return $Src->copy($dst, true);
 	}
 	
-	function _findFile(&$Model, $id) {
+	function _findFile(Model $Model, $id) {
 		$Model->id = $id;
 		$result = $Model->read();
 		$settings =& $this->settings[$Model->alias];
@@ -598,7 +598,7 @@ class UploadableBehavior extends ModelBehavior {
 	}
 	
     // Based on comment 8 from: http://bakery.cakephp.org/articles/view/improved-advance-validation-with-parameters
-	protected function _isUploadedFile(&$Model, $uploadArray){
+	protected function _isUploadedFile(Model $Model, $uploadArray){
 		if (!empty($this->settings[$Model->alias]['bypass_is_uploaded'])) {
 			return true;
 		}

@@ -2,13 +2,13 @@
 App::import('Lib', 'Uploadable.Image');
 App::import('Behavior', 'Uploadable.Uploadable');
 class ImageUploadableBehavior extends UploadableBehavior {
-	function setup(&$Model, $settings = array()) {
+	function setup(Model $Model, $settings = array()) {
 		$settings['exts'] = array('gif', 'jpg', 'jpeg', 'png');
 		return parent::setup($Model, $settings);
 	}
 	
 	//Manually saves the image to the system, bypassing the need to upload it
-	function saveImage(&$Model, $id, $imageFile) {
+	function saveImage(Model $Model, $id, $imageFile) {
 		$settings =& $this->settings[$Model->alias];
 		$uploadVar = $settings['upload_var'];
 
@@ -28,7 +28,7 @@ class ImageUploadableBehavior extends UploadableBehavior {
 	}
 	
 	//Returns the file name and path of the image
-	function getImageFilename(&$Model, $id, $dir = null, $root = false) {
+	function getImageFilename(Model $Model, $id, $dir = null, $root = false) {
 		$settings =& $this->settings[$Model->alias];
 		$fileField = 'filename'; //$settings['update']['filename'];
 		$result = $Model->read(null, $id);
@@ -37,7 +37,7 @@ class ImageUploadableBehavior extends UploadableBehavior {
 	}
 
 	//Resaves an image. Used in case you change your save directory formatting parameters
-	function refreshUpload(&$Model, $id, $dir = null) {
+	function refreshUpload(Model $Model, $id, $dir = null) {
 		$settings =& $this->settings[$Model->alias];
 		$tmpDir = $this->__getUploadDir($Model) . 'tmp_copy_dir' . DS;
 		if (!is_dir($tmpDir)) {
@@ -114,7 +114,7 @@ class ImageUploadableBehavior extends UploadableBehavior {
 		return true;
 	}
 	
-	function afterFileSaveCheck(&$Model, $value, $options = array()) {
+	function afterFileSaveCheck(Model $Model, $value, $options = array()) {
 		$return = parent::afterFileSaveCheck($Model, $value, $options);	
 		if (!isset($return) && !empty($options['location'])) {
 			if ($value == 'width') {

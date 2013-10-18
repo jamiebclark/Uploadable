@@ -18,7 +18,7 @@ class Image {
 		static $instance = array();
 
 		if (!$instance) {
-			$instance[0] =& new Image();
+			$instance[0] = new Image();
 		}
 		return $instance[0];
 	}
