@@ -17,6 +17,13 @@ class ImageUploadableBehavior extends UploadableBehavior {
 		return $this->getUploadFilename($Model, $id, $dir, $root);
 	}
 
+	public function saveDefaultImage(Model $Model, $data) {
+		return $this->uploadFile($Model, $data, array(
+			'callbacks' => false,
+			'filename' => '0.jpg',
+		));
+	}
+	
 	/**
 	 * Copies uploaded file to its new destination
 	 * Overwrites UploadableBehavior's function

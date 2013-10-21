@@ -68,19 +68,19 @@ class UploadableBehavior extends ModelBehavior {
 		$this->_log('Looking for variable: ' . $uploadVar);
 		if (!empty($Model->data[$Model->alias][$uploadVar])) {
 			$this->_log('Found it!');
-			$uploadArray = $Model->data[$Model->alias][$uploadVar];
+			$data = $Model->data[$Model->alias][$uploadVar];
 			App::uses('File', 'Utility');
-			$File = new File($uploadArray['name']);
+			$File = new File($data['name']);
 			$ext = strtolower($File->ext());
 			$errMsg = array();
 			
 			//Checks if no file is present
-			$noFile = (!empty($uploadArray['error']) && $uploadArray['error'] == 4) || !$this->_isUploadedFile($Model, $uploadArray);
+			$noFile = (!empty($data['error']) && $data['error'] == 4) || !$this->_isUploadedFile($Model, $data);
 	
 			if ($noFile) {
 				$this->_log('No file found');
 				if ((!empty($settings['required']) || ($created && !empty($settings['requiredCreated']))) 
-					&& !$this->_isUploadedFile($Model, $uploadArray)) {
+					&& !$this->_isUploadedFile($Model, $data)) {
 					$errMsg[] = 'You must select a file to continue';
 				} else {
 					//If it's not required, validate. No file will be added
@@ -88,13 +88,13 @@ class UploadableBehavior extends ModelBehavior {
 				}
 			}
 				
-			if (!empty($uploadArray['error'])) {
-				$errMsg[] = $this->errorTypes[$uploadArray['error']];
+			if (!empty($data['error'])) {
+				$errMsg[] = $this->errorTypes[$data['error']];
 			}
-			if (!empty($settings['required']) && !$this->_isUploadedFile($Model, $uploadArray)) {
+			if (!empty($settings['required']) && !$this->_isUploadedFile($Model, $data)) {
 				$errMsg[] = 'You must select a file to continue';
 			}
-			if (!empty($settings['maxsize']) && $settings['maxsize'] < $uploadArray['size']) {
+			if (!empty($settings['maxsize']) && $settings['maxsize'] < $data['size']) {
 				$errMsg[] = 'File exceeds the max file size';
 			}
 			if (!empty($settings['block_exts']) && (in_array($ext, $settings['block_exts']))) {
@@ -412,12 +412,18 @@ class UploadableBehavior extends ModelBehavior {
 	/**
 	 * Uploads a passed array of info
 	 *
-	 * @param array $uploadArray The passed array from $this->data
+	 * @param array $data The passed array from $this->data
 	 * @param array $options Additional formatting options
 	 **/
-	function uploadFile(Model $Model, $uploadArray, $options = null) {
+	function uploadFile(Model $Model, $data, $options = null) {
+		App::uses('File', 'Utility');
+		$options = array_merge(array(
+			'callbacks' => true,
+			'filename' => null,
+		), $options);
+		
 		//Makes sure there is something to upload
-		if (!$this->_isUploadedFile($Model, $uploadArray)) {
+		if (!$this->_isUploadedFile($Model, $data)) {
 			return false;
 		}
 		//Upload Directory
@@ -430,16 +436,16 @@ class UploadableBehavior extends ModelBehavior {
 			return false;
 		}
 
-		$tmp = $uploadArray['tmp_name'];
+		$tmp = $data['tmp_name'];
 		$TmpFile = new File($tmp);
 						
-		$File = new File($uploadArray['name']);
+		$File = new File($data['name']);
 		$ext = $File->ext();
 		
 		if (isset($options['filename']) && $options['filename'] != '') {
 			$filename = $options['filename'];
 		} else {
-			$filename = $this->getFilename($Model, $uploadArray);
+			$filename = $this->getFilename($Model, $data);
 		}
 		
 		if (!empty($ext) && strpos($filename, '.') === false) {
@@ -480,7 +486,7 @@ class UploadableBehavior extends ModelBehavior {
 				'dir' => $dir,
 				'filename' => $filename,
 				'size' => $TmpFile->size(),
-				'type' => !empty($uploadArray['type']) ? $uploadArray['type'] : null,
+				'type' => !empty($data['type']) ? $data['type'] : null,
 				'ext' => $ext,
 				'location' => $dst,
 			);
@@ -490,19 +496,19 @@ class UploadableBehavior extends ModelBehavior {
 				$this->settings[$Model->alias]['success'] = $successInfo;
 				$savedDirSettings = true;
 			}
-		}		
-		return $this->afterFileSave($Model);
+		}	
+		return $options['callbacks'] ? $this->afterFileSave($Model) : true;
 	}
 	
 	/**
 	 * Returns a new filename for the uploaded file
 	 *
 	 **/
-	function getFilename(Model $Model, $uploadArray) {
+	function getFilename(Model $Model, $data) {
 		$filenameRule = Param::keyCheck($this->settings[$Model->alias], 'filename_rule');
 		$filenameMatch = Param::keyCheck($this->settings[$Model->alias], 'filename_match');
 		
-		$file = new File($uploadArray['tmp_name']);
+		$file = new File($data['tmp_name']);
 		
 		if ($filenameMatch == 'id' || $filenameRule == 'id') {
 			$filename = $Model->id;
@@ -668,13 +674,13 @@ class UploadableBehavior extends ModelBehavior {
 	}
 	
     // Based on comment 8 from: http://bakery.cakephp.org/articles/view/improved-advance-validation-with-parameters
-	protected function _isUploadedFile(Model $Model, $uploadArray){
+	protected function _isUploadedFile(Model $Model, $data){
 		if (!empty($this->settings[$Model->alias]['bypass_is_uploaded'])) {
 			return true;
 		}
-		if ((isset($uploadArray['error']) && $uploadArray['error'] == 0) || 
-		 (!empty( $uploadArray['tmp_name']) && $uploadArray['tmp_name'] != 'none')) {
-			return is_uploaded_file($uploadArray['tmp_name']);
+		if ((isset($data['error']) && $data['error'] == 0) || 
+		 (!empty( $data['tmp_name']) && $data['tmp_name'] != 'none')) {
+			return is_uploaded_file($data['tmp_name']);
 		}
 		return false;
 	}
