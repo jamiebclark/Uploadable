@@ -21,7 +21,11 @@ class DefaultImageHelper extends AppHelper {
 				$out = $this->Html->link($out, $options['url'], array('escape' => false));
 			}
 		} else {
-			$out = $this->Html->image($this->_filePath(array($result['dir'], $file), '/'), $options);
+			$src = $this->_filePath(array($result['dir'], $file), '/');
+			if (!empty($result['plugin'])) {
+				$src = $result['plugin'] . '.' . $src;
+			}
+			$out = $this->Html->image($src, $options);
 		}
 		return $out;
 	}

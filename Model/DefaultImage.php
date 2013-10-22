@@ -9,34 +9,59 @@ class DefaultImage extends UploadableAppModel {
 		if (!empty($models) && !is_array($models)) {
 			$models = array($models);
 		}
-		
-		$modelNames = App::objects('model');
-		$dirs = array();
-		foreach ($modelNames as $model) {
+		$allModels = $this->_getModelNames();
+		$result = array();
+		foreach ($allModels as $model) {
 			if (!empty($models) && !in_array($model, $models)) {
 				continue;
 			}
-			$Model = ClassRegistry::init($model);
-			if (!empty($Model->actsAs[$this->behaviorKey])) {
-				$uploadDir = $Model->getUploadDir();
-				$uploadDirRoot = $Model->getUploadDir(null, true);
-				$dirs[$model] = array(
-					'alias' => $model,
-					'root' => $uploadDirRoot,
-					'dir' => $uploadDir,
-				);
-				if (!empty($Model->actsAs[$this->behaviorKey]['dirs'])) {
-					foreach ($Model->actsAs[$this->behaviorKey]['dirs'] as $dir => $config) {
-						$dirs[$model]['dirs'][] = $dir;
-					}
-				} else {
-					$dirs[$model]['dirs'] = array($uploadDir);
+			$result = $this->_getModel($model, $result);
+		}
+		if ($type == 'first' && !empty($result)) {
+			$result = array_shift($result);
+		}
+		return $result;
+	}
+	
+	private function _getModel($model, $result = array()) {
+		$Model = ClassRegistry::init($model);
+		list($plugin, $alias) = pluginSplit($model);
+		if (!empty($Model->actsAs[$this->behaviorKey])) {
+			$uploadDir = $Model->getUploadDir();
+			$uploadDirRoot = $Model->getUploadDir(null, true);
+			$result[$model] = compact('alias', 'plugin') + array(
+				'root' => $this->_filePath($uploadDirRoot),
+				'dir' => $this->_filePath($uploadDir),
+			);
+			if (!empty($Model->actsAs[$this->behaviorKey]['dirs'])) {
+				foreach ($Model->actsAs[$this->behaviorKey]['dirs'] as $dir => $config) {
+					$result[$model]['dirs'][] = $dir;
 				}
-			}
-			if ($type == 'first') {
-				return $dirs[$model];
+			} else {
+				$result[$model]['dirs'] = array($uploadDir);
 			}
 		}
-		return $dirs;
+		return $result;
+	}
+	
+	private function _getModelNames() {
+		$allModels = App::objects('Model');
+		if ($plugins = App::objects('plugin')) {
+			foreach($plugins as $plugin) {
+				if (CakePlugin::loaded($plugin)) {
+					if ($pluginModels = App::objects("$plugin.Model")) {
+						foreach ($pluginModels as $model) {
+							$allModels[] = "$plugin.$model";
+						}
+					}
+				}
+			}
+		}
+		return $allModels;	
+	}
+	
+	private function _filePath($files = array(), $ds = DS) {
+		$path = is_array($files) ? implode($ds, $files) : $files;
+		return str_replace(array('//', '\\\\', '\\', '/', '\\/'), $ds, $path);
 	}
 }
