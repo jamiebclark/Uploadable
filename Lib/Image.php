@@ -278,6 +278,9 @@ class Image {
 	}
 
 	public static function copyFileScaled($filename, $srcScale=1, $srcX=0, $srcY=0, $dstW=null, $dstH=null, $bgColor=null) {
+		if (!$srcScale) {
+			$srcScale = 1;	//Prevents division by 0
+		}
 		if (!is_file($filename)) {
 			return false;
 		}
@@ -470,5 +473,9 @@ class Image {
 			return false; //Invalid hex color code
 		}
 		return $returnAsString ? implode($seperator, $rgbArray) : $rgbArray; // returns the rgb string or the associative array
+	}
+	
+	public static function dsCleanup($filename) {
+		return str_replace(array('\\', '/', '\\/', '/\\'), DS, $filename);
 	}
 }
