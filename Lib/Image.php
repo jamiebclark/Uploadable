@@ -12,7 +12,7 @@ class Image {
  * @access public
  * @static
  */
-	function &getInstance() {
+	public static function &getInstance() {
 		static $instance = array();
 
 		if (!$instance) {
@@ -21,7 +21,7 @@ class Image {
 		return $instance[0];
 	}
 
-	function imageOutput($type, $resource, $filename = null, $quality = 100, $filters = null) {
+	public static function imageOutput($type, $resource, $filename = null, $quality = 100, $filters = null) {
 		if (in_array($type, array('png', 'image/png'))) {
 			if (!empty($quality)) {
 				$quality = 10 - round($quality / 100);
@@ -34,7 +34,7 @@ class Image {
 		}
 	}
 	
-	function createFromFile($filename) {
+	public static function createFromFile($filename) {
 		ini_set("memory_limit", "256M");
 		$self =& Image::getInstance();
 
@@ -44,7 +44,8 @@ class Image {
 		}
 		if (($size = getimagesize($filename)) === false) {
 			return false;
-		}		$img = false;
+		}
+		$img = false;
 		switch($size['mime']) {
 			case 'image/jpg':
 			case 'image/jpeg':
@@ -82,7 +83,7 @@ class Image {
 		return $img;
 	}
 	
-	function fileNameExtension($fileName) {
+	public static function fileNameExtension($fileName) {
 		$fileName = explode('.', $fileName);
 		if (count($fileName) == 1) {
 			return false;
@@ -94,11 +95,11 @@ class Image {
 	/**
 	 * Determines if a given image exists in the Cake image directory
 	 **/
-	function isCakeImage($image) {
+	public static function isCakeImage($image) {
 		return is_file( IMAGES . str_replace('/', DS, $image));
 	}
 	
-	function fileExtension($file) {
+	public static function fileExtension($file) {
 		$self =& Image::getInstance();
 		if (!is_file($file)) {
 			return false;
@@ -107,7 +108,7 @@ class Image {
 		return $self->mimeExtension($size['mime']);
 	}
 	
-	function mimeExtension($mime) {
+	public static function mimeExtension($mime) {
 		$ext = false;
 		switch($mime) {
 			case 'image/jpg':
@@ -133,7 +134,7 @@ class Image {
 	/* Contact:  admin@dhkold.com                */
 	/* Date:     The 15th of June 2005           */
 	/* Version:  2.0B                            */
-	function createFromBmp($filename) {
+	public static function createFromBmp($filename) {
 		//Ouverture du fichier en mode binaire
 		if (! $f1 = fopen($filename,"rb")) return FALSE;
 		//1 : Chargement des ent?tes FICHIER
@@ -215,7 +216,7 @@ class Image {
 	 * @param boolean $soft If soft is on, it will fit the image so part of the image is cut, leaving blank background showing in places
 	 *
 	 **/
-	function constrainCrop($img, $nw, $nh, $soft = false) {
+	public static function constrainCrop($img, $nw, $nh, $soft = false) {
 		$self =& Image::getInstance();
 		$ow = imagesx($img);
 		$oh = imagesy($img);
@@ -271,12 +272,12 @@ class Image {
 		return $img2;
 	}
 
-	function copyFileScaledCss($filename, $srcScale=1, $top=0, $left=0, $dstW=null, $dstH=null, $bgColor=null) {
+	public static function copyFileScaledCss($filename, $srcScale=1, $top=0, $left=0, $dstW=null, $dstH=null, $bgColor=null) {
 		$self =& Image::getInstance();
 		return $self->copyFileScaled($filename, $srcScale, $top * -1, $left * -1, $dstW, $dstH, $bgColor);
 	}
 
-	function copyFileScaled($filename, $srcScale=1, $srcX=0, $srcY=0, $dstW=null, $dstH=null, $bgColor=null) {
+	public static function copyFileScaled($filename, $srcScale=1, $srcX=0, $srcY=0, $dstW=null, $dstH=null, $bgColor=null) {
 		if (!is_file($filename)) {
 			return false;
 		}
@@ -353,7 +354,7 @@ class Image {
 	 *
 	 * @return PHP image resource
 	 */
-	function constrain($img, $maxW = null, $maxH = null) {
+	public static function constrain($img, $maxW = null, $maxH = null) {
 		$self =& Image::getInstance();
 		
 		if (empty($maxW) && empty($maxH)) {
@@ -393,7 +394,7 @@ class Image {
 	/**
 	 * Extends PHP's imagecopyresampled function by also preserving any alpha values
 	 */
-	function copyResampled($dst_image, $src_image, $dst_x, $dst_y, $src_x, $src_y, $dst_w, $dst_h, $src_w, $src_h) {
+	public static function copyResampled($dst_image, $src_image, $dst_x, $dst_y, $src_x, $src_y, $dst_w, $dst_h, $src_w, $src_h) {
 		$trnprt_indx = imagecolortransparent($src_image);
 		// If we have a specific transparent color
 		if ($trnprt_indx >= 0 && $trnprt_indx < imagecolorstotal($src_image)) {
@@ -416,7 +417,7 @@ class Image {
 	left, top:  coordinates you will pass to imagettftext
 	width, height: dimension of the image you have to create
 	*************/
-	function calculateTextBox($text, $fontFile, $fontSize, $fontAngle = 0) {
+	public static function calculateTextBox($text, $fontFile, $fontSize, $fontAngle = 0) {
 		$rect = imagettfbbox($fontSize,$fontAngle,$fontFile,$text);
 		$minX = min(array($rect[0],$rect[2],$rect[4],$rect[6]));
 		$maxX = max(array($rect[0],$rect[2],$rect[4],$rect[6]));
@@ -437,7 +438,7 @@ class Image {
 	 * @param resource $img : a PHP image resource
 	 * @param string $color_hex_str : hexadecimal color value
 	 */
-	function colorAllocateStr($img, $color_hex_str) {
+	public static function colorAllocateStr($img, $color_hex_str) {
 		$self =& Image::getInstance();
 		if(($colors = $self->hex2Rgb($color_hex_str)) === FALSE) {
 			return false;
@@ -453,7 +454,7 @@ class Image {
 	 * @param string $seperator (to separate RGB values. Applicable only if second parameter is true.)
 	 * @return array or string (depending on second parameter. Returns False if invalid hex color value)
 	 */                                                                                                
-	function hex2Rgb($hexStr, $returnAsString = false, $seperator = ',') {
+	public static function hex2Rgb($hexStr, $returnAsString = false, $seperator = ',') {
 		$hexStr = preg_replace("/[^0-9A-Fa-f]/", '', $hexStr); // Gets a proper hex string
 		$rgbArray = array();
 		if (strlen($hexStr) == 6) { //If a proper hex code, convert using bitwise operation. No overhead... faster
