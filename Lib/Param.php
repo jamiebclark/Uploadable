@@ -7,16 +7,16 @@
  **/
  
 class Param {
-	function &getInstance() {
+	public static function &getInstance() {
 		static $instance = array();
 
 		if (!$instance) {
-			$instance[0] =& new Param();
+			$instance[0] = new Param();
 		}
 		return $instance[0];
 	}
 
-	function keyValCheck(&$params, $val, $remove = false, $default = null) {
+	public static function keyValCheck(&$params, $val, $remove = false, $default = null) {
 		$self =& Param::getInstance();
 		$chk = $self->valCheck($params, $val, $remove, $default);
 		if (!isset($chk)) {
@@ -27,9 +27,8 @@ class Param {
 	
 	//Checks a params array for the existence of a key
 	//Returns the params value at the key if found, otherwise null
-	function keyCheck(&$params, $key, $remove = false, $default = null) {
+	public static function keyCheck(&$params, $key, $remove = false, $default = null) {
 		$return = $default;		//If not found, returns NULL if user has not set a default value
-		
 		if (!is_array($params)) {
 			return $return;
 		}
@@ -46,7 +45,7 @@ class Param {
 	
 	//Checks a params array for the existence of a value
 	//Returns the value if found, otherwise null
-	function valCheck(&$params, $val, $remove = false, $default = null, $returnKey = false) {
+	public static function valCheck(&$params, $val, $remove = false, $default = null, $returnKey = false) {
 		$return = $default;		//If not found, returns NULL if user has not set a default value
 		if (!is_array($params)) {
 			return $params == $val ? true : $return;
@@ -63,13 +62,13 @@ class Param {
 	}
 	
 	//Finds the key of a value within the parameters
-	function valKey(&$params, $val) {
+	public static function valKey(&$params, $val) {
 		$self =& Param::getInstance();
 		return $self->valCheck($params, $val, false, null, true);
 	}
 	
 	//Does a strict check of a key to see if it has been set to FALSE
-	function falseCheck($params, $key, $remove = false) {
+	public static function falseCheck($params, $key, $remove = false) {
 		if (isset($params[$key])) { //Key is found
 			$return = $params[$key] === false;	//Key value is false
 			if ($remove) {
@@ -80,6 +79,4 @@ class Param {
 			return null;	//Key is not found
 		}
 	}
-
 }
-?>
