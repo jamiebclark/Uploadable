@@ -57,7 +57,7 @@ class ImageUploadableBehavior extends UploadableBehavior {
 			$img = Image::constrainCrop($img, $options['set'][0], $options['set'][1]);
 		}
 		if (!empty($options['setSoft'])) {
-			//Force an image to fit dimentions. Sizes until it all fits. If dimensions don't match, background will show
+			//Force an image to fit dimensions. Sizes until it all fits. If dimensions don't match, background will show
 			$img = Image::constrainCrop($img, $options['setSoft'][0], $options['setSoft'][1], true);
 		}
 		
