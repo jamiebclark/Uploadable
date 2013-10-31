@@ -43,8 +43,7 @@ class UploadableBehavior extends ModelBehavior {
 			
 			'root' =>			'web',				//Whether or not to use the web root with the upload_dir
 			'random_path' =>	true,				//Adds an additional sub-directory to the given upload (to cut down on slowdown as the directory grows)
-
-
+			'gitignore' => true,					//If true, maintains a .gitignore and empty file to prevent problems with syncing to a git repository
 		);
 		
 		$Model->uploadedFiles = array();
@@ -117,6 +116,7 @@ class UploadableBehavior extends ModelBehavior {
 		$uploadVar = $this->settings[$Model->alias]['upload_var'];
 		$settings = $this->settings[$Model->alias];
 		$data =& $Model->data[$Model->alias];
+		
 		//Doesn't save if file doesn't exist
 		$this->_log($data);
 		if (empty($data[$uploadVar]) || !$this->_isUploadedFile($Model, $data[$uploadVar])) {
@@ -157,6 +157,10 @@ class UploadableBehavior extends ModelBehavior {
 			}
 			//debug('Uploading...');
 			$this->uploadFile($Model, $Model->data[$Model->alias][$uploadVar], $options);
+			
+			if (!empty($settings['gitignore'])) {
+				$this->updateGitignore($Model);
+			}
 			
 			unset($this->settings[$Model->alias]['set_random_path']);
 			unset($this->settings[$Model->alias]['no_random']);
@@ -636,6 +640,37 @@ class UploadableBehavior extends ModelBehavior {
 		}
 		
 		return false;
+	}
+
+	/**
+	 * Updates folder to comply with a git repository. 
+	 * Makes sure there is an 'empty' file so directory is recognized in git, but ignores everything else.
+	 *
+	 **/
+	protected function updateGitignore(Model $Model) {
+		$dir = $this->getUploadDir($Model, null, true);
+		$dir = $this->_dsFixFile($dir);
+		
+		$emptyFile = $dir . 'empty';
+		$ignoreFile = $dir . '.gitignore';
+		
+		//Creates an empty file to make sure folder is saved in git
+		if (!is_file($emptyFile)) {
+			if (!($file = fopen($emptyFile, 'w'))) {
+				throw new Exception("Could not create empty file: $emptyFile");
+			}
+			fclose($file);
+		}
+		
+		//Creates .gitignore file
+		if (!is_file($ignoreFile)) {
+			if (!$file = fopen($ignoreFile, 'w')) {
+				throw new Exception("Could not create .gitignore file: $ignoreFile");
+			}
+			fwrite($file, "*\n");		//Ignores everything
+			fwrite($file, "!empty\n");	//Except the empty file
+			fclose($file);			
+		}
 	}
 
 	//Fixes issues with multiple types of directory separators in a filename
