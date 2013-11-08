@@ -5,7 +5,7 @@ class DefaultImage extends UploadableAppModel {
 	
 	private $behaviorKey = 'Uploadable.ImageUploadable';
 	
-	public function find($type = 'first', $models = array()) {
+	public function find($type = 'first', $query = array()) {
 		if (!empty($models) && !is_array($models)) {
 			$models = array($models);
 		}
