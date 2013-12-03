@@ -405,6 +405,8 @@ class UploadableBehavior extends ModelBehavior {
 			}
 			
 			$this->afterFileDelete($Model);
+			$this->deleteEmptySubDirectories($Model);
+			
 			return true;
 		}		
 	}
@@ -633,7 +635,7 @@ class UploadableBehavior extends ModelBehavior {
 					$dir = $rules;
 				}
 				if (!empty($result[$Model->alias][$filenameCol])) {
-					$files[] = $dir . $result[$Model->alias][$filenameCol];
+					$files[] = $this->_dsFixFile($dir . $result[$Model->alias][$filenameCol]);
 				}
 			}
 			return $files;
@@ -680,6 +682,57 @@ class UploadableBehavior extends ModelBehavior {
 		$filename = str_replace($notDs, $ds, $filename);
 		$filename = str_replace($ds . $ds, $ds, $filename);
 		return $filename;
+	}
+	
+	//Removes empty directories inside the upload directory
+	private function deleteEmptySubDirectories($Model) {
+		$settings =& $this->settings[$Model->alias];
+		$dirs = !empty($settings['dirs']) ? $settings['dirs'] : array(null);
+		
+		$root = $this->getRoot($Model);
+		$uploadDir = $this->getUploadDir($Model, null, true);
+		
+		//Minimizes chance of mis-configuring to delete folders you shouldn't
+		if (
+			empty($settings['random_path']) ||		//Subdirectories are being automatically generated
+			empty($settings['upload_dir']) ||		//Upload dir has been set
+			strpos($uploadDir, WWW_ROOT) !== 0 || 	//Upload dir is in webroot
+			$uploadDir == WWW_ROOT					//Upload dir is not set to webroot
+		) {
+			return false;
+		}
+		
+		foreach ($dirs as $dir) {
+			$this->_deleteEmptyDirectories($this->getUploadDir($Model, $dir, true));
+		}
+	}
+	
+	/**
+	 * Recursively checks a directory to see if it's empty
+	 * Deletes the folder if it is empty
+	 *
+	 * @param string Directory to check
+	 * @return bool True if empty, false if it contains any files
+	 **/
+	private function _deleteEmptyDirectories($dir) {
+		$dir = $this->_folderSlashCheck($dir);
+		$isEmpty = true;
+		//Cycles through all files and folders in directory
+		$success = $this->_dirFilesFunction($dir, function($file) use ($dir, &$isEmpty) {
+			$subDir = $dir . $file;
+			if (is_dir($subDir)) {
+				//Checks sub-directory
+				if (!$this->_deleteEmptyDirectories($subDir)) {
+					$isEmpty = false;
+				}
+			} else {
+				$isEmpty = false;
+			}
+		});
+		if ($isEmpty) {
+			rmdir($dir);
+		}
+		return $isEmpty;
 	}
 	
 	/**
@@ -748,5 +801,31 @@ class UploadableBehavior extends ModelBehavior {
 				'Message' => $msg,
 			));
 		}
+	}
+	
+	/**
+	 * Loops through a directory, applying a function to each file or folder found
+	 *
+	 * @param string $dir The directory to read
+	 * @param function $fn The function to apply. It will be passed the file name string
+	 * @return void
+	 **/
+	private function _dirFilesFunction($dir, $fn) {
+		if (!is_dir($dir)) {
+			throw new Exception ("Could not open $dir. Does not exist");
+		}
+		if (!$handle = opendir($dir)) {
+			throw new Exception ("Could not open $dir.");
+		}
+		while(($file = readdir($handle)) !== false) {
+			if ($file == '.' || $file == '..') {
+				continue;
+			}
+			//If function returns false, it stops looping
+			if ($fn($file) === false) {
+				break;
+			}
+		}
+		closedir($handle);
 	}
 }
