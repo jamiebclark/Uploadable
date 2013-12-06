@@ -702,7 +702,11 @@ class UploadableBehavior extends ModelBehavior {
 			return false;
 		}
 		
-		foreach ($dirs as $dir) {
+		foreach ($dirs as $dir => $config) {
+			if (is_numeric($dir)) {
+				$dir = $config;
+				$config = array();
+			}
 			$this->_deleteEmptyDirectories($this->getUploadDir($Model, $dir, true));
 		}
 	}
