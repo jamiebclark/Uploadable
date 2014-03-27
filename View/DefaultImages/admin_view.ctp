@@ -2,8 +2,8 @@
 echo $this->Html->link('Back to list', array('action' => 'index'));
 ?>
 <h2><?php echo Inflector::humanize(Inflector::underscore($defaultImage['alias'])); ?></h2>
-<div class="row-fluid">
-	<div class="span6">
+<div class="row">
+	<div class="col-sm-6">
 		<dl>
 			<dt>Root</dt>
 			<dd><?php echo $defaultImage['root']; ?></dd>
@@ -25,7 +25,7 @@ echo $this->Html->link('Back to list', array('action' => 'index'));
 			?>
 		</fieldset>
 	</div>
-	<div class="span6">
+	<div class="col-sm-6">
 		<h3>Current Images</h3>
 		<?php
 		foreach ($defaultImage['dirs'] as $dir) {
