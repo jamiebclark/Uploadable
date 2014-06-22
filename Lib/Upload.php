@@ -234,6 +234,19 @@ class Upload {
 		return $path;
 	}
 
+	public static function removeEmptySubFolders($dir) {
+		$empty = true;
+		$files = glob(Folder::slashTerm($dir) . '*');
+		foreach ($files as $file) {
+			if (is_dir($file)) {
+				$empty = self::removeEmptySubFolders($file);
+			} else {
+				$empty = false;
+			}
+		}
+		return $empty && rmdir($dir);
+	}
+
 	protected static function _isUploadedFile($data){
 		if (
 			(!isset($data['error']) || $data['error'] == 0) &&

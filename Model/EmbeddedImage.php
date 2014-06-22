@@ -61,7 +61,10 @@ class EmbeddedImage extends UploadableAppModel {
 	}
 
 	public function deleteEmpty() {
-		return $this->deleteAll([$this->escapeField('filename') => null]);
+		return $this->deleteAll(['OR' => [
+			[$this->escapeField('filename') => null],
+			[$this->escapeField('filename') => '']
+		]]);
 	}
 
 	public function reorder($model, $foreignKey) {

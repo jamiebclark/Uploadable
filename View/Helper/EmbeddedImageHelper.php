@@ -69,6 +69,7 @@ class EmbeddedImageHelper extends AppHelper {
 	}
 
 	public function replace($text, $result, $options = []) {
+		debug("REPLACING");
 		$options = array_merge([
 			'size' => null,
 		], $options);

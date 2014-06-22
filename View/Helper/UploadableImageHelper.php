@@ -4,7 +4,6 @@ class UploadableImageHelper extends AppHelper {
 	public $helpers = array('Html', 'Form');
 
 	public function input($name, $options = []) {
-
 		$fieldParts = explode('.', $name);
 		$field = array_pop($fieldParts);
 		$dataName = implode('.', $fieldParts);
@@ -32,7 +31,7 @@ class UploadableImageHelper extends AppHelper {
 			$dataName = $model;
 		}
 
-		$out = $this->Form->input("$dataName.$field", ['type' => 'file']);
+		$out = $this->Form->input("$dataName.$field", ['type' => 'file'] + $options);
 		if ($this->Html->value("uploadable_storage.$dataName")) {
 			$data = unserialize(base64_decode($this->Html->value("uploadable_storage.$dataName")));
 		} else if ($this->Html->value($dataName)) {
