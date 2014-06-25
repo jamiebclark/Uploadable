@@ -141,6 +141,31 @@ class Upload {
 		return $return;
 	}
 
+	public static function gitIgnore($dir) {
+		$dir = Folder::slashTerm(self::_dsFixFile($dir));
+		
+		$emptyFile = $dir . 'empty';
+		$ignoreFile = $dir . '.gitignore';
+		
+		// Creates an empty file to make sure folder is saved in git
+		if (!is_file($emptyFile)) {
+			if (!($file = fopen($emptyFile, 'w'))) {
+				throw new Exception("Could not create empty file: $emptyFile");
+			}
+			fclose($file);
+		}
+		
+		// Creates .gitignore file
+		if (!is_file($ignoreFile)) {
+			if (!$file = fopen($ignoreFile, 'w')) {
+				throw new Exception("Could not create .gitignore file: $ignoreFile");
+			}
+			fwrite($file, "*\n");		//Ignores everything
+			fwrite($file, "!empty\n");	//Except the empty file
+			fclose($file);			
+		}
+	}
+
 	public static function copyImage($src, $dst, $rules = []) {
 		EasyLog::log("Copying image from $src to $dst");
 		$Src = new File($src);

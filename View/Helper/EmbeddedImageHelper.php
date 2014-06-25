@@ -11,7 +11,9 @@ class EmbeddedImageHelper extends AppHelper {
 		'Uploadable.UploadableImage'
 	];
 
-	
+	private $_embedImageResult = null;
+	private $_embedImageOptions = null;
+
 	public function beforeRender($viewFile) {
 		$this->Html->script('Uploadable.embedded_image', ['inline' => false]);
 		return parent::beforeRender($viewFile);
@@ -65,11 +67,25 @@ class EmbeddedImageHelper extends AppHelper {
 	// Stores the images result
 	public function setImages($result, $options = []) {
 		// Assigns the DisplayText callback to swap out images
-		$this->DisplayText->addTextMethod([$this, 'replace'], [$result, $options]);
+		$this->_embedImageResult = $result;
+		$this->_embedImageOptions = $options;
+
+		$this->DisplayText->registerTextMethod('embedImages', [$this, 'replace']);
 	}
 
-	public function replace($text, $result, $options = []) {
-		debug("REPLACING");
+	public function replace($text, $result = null, $options = []) {
+		if (!empty($result)) {
+			$this->_embedImageResult = $result;
+		} else {
+			$result = $this->_embedImageResult;
+		}
+
+		if (!empty($options)) {
+			$this->_embedImageOptions = $options;
+		} else {
+			$options = $this->_embedImageOptions;
+		}
+
 		$options = array_merge([
 			'size' => null,
 		], $options);

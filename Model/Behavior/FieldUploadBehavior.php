@@ -31,7 +31,9 @@ class FieldUploadBehavior extends ModelBehavior {
 			'isImage' => true,	
 			// Whether a ranom path of folders (eg: "/01/05/72/") should be inserted between the path and filname.
 			//  This is helpful for folders with many images	
-			'randomPath' => true,	
+			'randomPath' => true,
+			// Makes sure an "empty" and ".gitignore" file are created in any upload directories	
+			'gitignore' => true,
 		];
 		if (empty($settings['fields'])) {
 			$fields = $settings;
@@ -118,6 +120,7 @@ class FieldUploadBehavior extends ModelBehavior {
 		}
 		$this->_startUploadQueue($Model, $id);	// Uploads anything found in beforeSave
 		$this->_startDeleteQueue($Model, $id);	// Deletes anything marked for deletion
+
 
 		return parent::afterSave($Model, $created, $options);
 	}
@@ -233,6 +236,10 @@ class FieldUploadBehavior extends ModelBehavior {
 				$config['filename'] = str_replace('\\', '/', $config['filename']);
 			}
 			$config['randomPath'] = false;	//Turns it off before passing to the Upload Utility so we don't do it twice
+		}
+
+		if (!empty($config['gitignore'])) {
+			Upload::gitIgnore($this->_getFieldDir($Model, $field));
 		}
 
 		if ($result = Upload::copy($data, $dirs, $config)) {
