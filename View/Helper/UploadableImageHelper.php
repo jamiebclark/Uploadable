@@ -3,6 +3,11 @@ class UploadableImageHelper extends AppHelper {
 	public $name = 'UploadableImage';
 	public $helpers = array('Html', 'Form');
 
+	public function beforeRender($viewFile, $options = []) {
+		$this->Html->css('Uploadable.style', null, ['inline' => false]);
+		return parent::beforeRender($viewFile, $options);
+	}
+	
 	public function input($name, $options = []) {
 		$fieldParts = explode('.', $name);
 		$field = array_pop($fieldParts);
@@ -58,7 +63,7 @@ class UploadableImageHelper extends AppHelper {
 	public function image($data, $field, $size = null, $options = []) {
 		$src = $this->getDataFieldSrc($data, $field, $size);
 		if (!empty($src)) {
-			return $this->Html->image($src, $options);
+			return $this->Html->image($src, $this->parseOptions($options));
 		} else {
 			return '';
 		}
@@ -119,5 +124,21 @@ class UploadableImageHelper extends AppHelper {
 		} else {
 			return null;
 		}
+	}
+
+	private function parseOptions($options) {
+		if (!is_array($options)) {
+			$list = explode('|', $options);
+			$options = [];
+			foreach ($list as $val) {
+				if (empty($val)) {
+					continue;
+				}
+				list($key, $val) = explode('=', $val) + [null, null];
+				$options[$key] = $val;
+			}
+		}
+		$options = $this->addClass($options, 'uploadable-image');
+		return $options;
 	}
 }

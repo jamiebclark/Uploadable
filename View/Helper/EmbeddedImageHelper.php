@@ -70,7 +70,7 @@ class EmbeddedImageHelper extends AppHelper {
 		$this->_embedImageResult = $result;
 		$this->_embedImageOptions = $options;
 
-		$this->DisplayText->registerTextMethod('embedImages', [$this, 'replace']);
+		$this->DisplayText->registerTextMethod('embedImages', [$this, 'replace'], null, ['before' => 'truncate']);
 	}
 
 	public function replace($text, $result = null, $options = []) {
@@ -94,16 +94,23 @@ class EmbeddedImageHelper extends AppHelper {
 		if (isset($result['EmbeddedImage'])) {
 			$result = $result['EmbeddedImage'];
 		}
+		$result = Hash::combine($result, '{n}.uid', '{n}');
 		$replace = [];
-		$uids = Hash::combine($result, '{n}.uid', '{n}.uid');
-		debug($text);
-		if (preg_match_all('/<Photo ([\d]+)([^>]*]){0,1}>/', $text, $matches)) {
-			debug($matches);
+		$regex = '/<Photo ([\d]+)[\s]*([^>]*)>/';
+		preg_match_all($regex, $text, $matches);
+		
+		if (!empty($matches)) {
+			foreach ($matches[0] as $k => $match) {
+				$uid = $matches[1][$k];
+				$attrs = $matches[2][$k];
+				$set = '';
 
+				if (!empty($result[$uid])) {
+					$set = $this->UploadableImage->image($result[$uid], 'filename', $size, $attrs);
+				}
+				$replace[$match] = $set;
+			}
 		}
-		//foreach ($result as $row) {
-		//	$replace["<Photo {$row['uid']}>"] = $this->UploadableImage->image($row, 'filename', $size);
-		//}
 		return str_replace(array_keys($replace), $replace, $text);
 	}
 }
