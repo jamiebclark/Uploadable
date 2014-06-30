@@ -17,6 +17,7 @@ class FieldUploadBehavior extends ModelBehavior {
 	protected $_deleteQueue = [];
 
 	protected $_webRoot = WWW_ROOT;
+	protected $_urlBase = null;
 
 	public function setup(Model $Model, $settings =[]) {
 		PluginConfig::init('Uploadable');
@@ -41,6 +42,7 @@ class FieldUploadBehavior extends ModelBehavior {
 		// Corrects for development branch environment
 		if ($defaultFieldSettings['root'] == '/home/souper/public_sub_html/development/app/webroot/') {
 			$defaultFieldSettings['root'] = '/home/souper/public_html/app/webroot/';
+			$this->_setUrlBase('http://souperbowl.org');
 			$this->_setWebRoot($defaultFieldSettings['root']);
 		}
 
@@ -157,6 +159,13 @@ class FieldUploadBehavior extends ModelBehavior {
 
 	protected function _setWebRoot($root) {
 		$this->_webRoot = $root;
+	}
+
+	protected function _setUrlBase($base) {
+		if (substr($base, -1) != '/') {
+			$base .= '/';
+		}
+		$this->_urlBase = $base;
 	}
 
 	public function getUploadFieldWebRoot(Model $Model) {
@@ -415,6 +424,9 @@ class FieldUploadBehavior extends ModelBehavior {
 					$src = substr($path, strlen($webRoot) - 1);
 					if (DS == '\\') {
 						$src = str_replace(DS, '/', $src);
+					}
+					if (!empty($this->_urlBase)) {
+						$src = $this->_urlBase . $src;
 					}
 				}
 				if (is_file($path)) {
