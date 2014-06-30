@@ -79,8 +79,6 @@ class FieldUploadBehavior extends ModelBehavior {
 	}
 
 	public function afterFind(Model $Model, $results, $primary = false) {
-		debug("Finding {$Model->alias}");
-
 		// Adds additional information to the find result pertaining to the uploaded files
 		foreach ($this->fields[$Model->alias] as $field => $fieldConfig) {
 			if (isset($results[$field])) {
@@ -417,11 +415,6 @@ class FieldUploadBehavior extends ModelBehavior {
 		$result = [];
 		$root = Folder::slashTerm($this->_getFieldDir($Model, $field));
 		$webroot = $this->_webroot;
-
-		debug('WEbroot');
-		debug($this->_webroot);
-		debug('URL Base');
-		debug($this->_urlBase);
 
 		foreach ($config['sizes'] as $size => $sizeConfig):
 			$path = $src = $width = $height = $mime = $filesize = null;
