@@ -404,8 +404,8 @@ class FieldUploadBehavior extends ModelBehavior {
 
 		$result = [];
 		$root = Folder::slashTerm($this->_getFieldDir($Model, $field));
-
 		$webRoot = $this->_webRoot;
+
 		foreach ($config['sizes'] as $size => $sizeConfig):
 			$path = $src = $width = $height = $mime = $filesize = null;
 			if (!empty($value)) {
@@ -423,9 +423,10 @@ class FieldUploadBehavior extends ModelBehavior {
 					$mime = $info['mime'];
 					$filesize = filesize($path);
 				}
-			} 
+			}
 			$result['sizes'][$size] = compact('path', 'src', 'width', 'height', 'mime', 'filesize'); 
 		endforeach;
+		debug(compact('root', 'webRoot', 'result'));
 		return $result;
 	}
 
