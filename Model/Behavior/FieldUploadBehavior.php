@@ -16,7 +16,7 @@ class FieldUploadBehavior extends ModelBehavior {
 	protected $_uploadQueue = [];
 	protected $_deleteQueue = [];
 
-	protected $_webRoot = WWW_ROOT;
+	protected $_webroot = WWW_ROOT;
 	protected $_urlBase = null;
 
 	public function setup(Model $Model, $settings =[]) {
@@ -29,7 +29,7 @@ class FieldUploadBehavior extends ModelBehavior {
 			// An array of sizes. They'll be set in the _initFieldSettings method
 			'sizes' => null,		
 			// The file root. Defaults to CakePHP's webroot
-			'root' => $this->_webRoot,		
+			'root' => $this->_webroot,		
 			// Whether the uploaded file is an image or not
 			'isImage' => true,	
 			// Whether a ranom path of folders (eg: "/01/05/72/") should be inserted between the path and filname.
@@ -159,7 +159,7 @@ class FieldUploadBehavior extends ModelBehavior {
 	}
 
 	protected function _setWebRoot($root) {
-		$this->_webRoot = $root;
+		$this->_webroot = $root;
 	}
 
 	protected function _setUrlBase($base) {
@@ -170,7 +170,7 @@ class FieldUploadBehavior extends ModelBehavior {
 	}
 
 	public function getUploadFieldWebRoot(Model $Model) {
-		return $this->_webRoot;
+		return $this->_webroot;
 	}
 
 	public function setUploadFieldSetting(Model $Model, $field, $varName, $value) {
@@ -414,15 +414,15 @@ class FieldUploadBehavior extends ModelBehavior {
 
 		$result = [];
 		$root = Folder::slashTerm($this->_getFieldDir($Model, $field));
-		$webRoot = $this->_webRoot;
+		$webroot = $this->_webroot;
 
 		foreach ($config['sizes'] as $size => $sizeConfig):
 			$path = $src = $width = $height = $mime = $filesize = null;
 			if (!empty($value)) {
 				$path = Folder::addPathElement($root, $size);
 				$path = Folder::slashTerm($path) . $value;
-				if (strpos($path, $webRoot) === 0) {
-					$src = substr($path, strlen($webRoot) - 1);
+				if (strpos($path, $webroot) === 0) {
+					$src = substr($path, strlen($webroot) - 1);
 					if (DS == '\\') {
 						$src = str_replace(DS, '/', $src);
 					}
@@ -437,7 +437,7 @@ class FieldUploadBehavior extends ModelBehavior {
 					$filesize = filesize($path);
 				}
 			}
-			$result['sizes'][$size] = compact('path', 'src', 'width', 'height', 'mime', 'filesize', 'webRoot'); 
+			$result['sizes'][$size] = compact('path', 'src', 'width', 'height', 'mime', 'filesize', 'webroot'); 
 		endforeach;
 		return $result;
 	}
