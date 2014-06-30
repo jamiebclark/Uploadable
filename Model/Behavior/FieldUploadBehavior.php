@@ -80,7 +80,7 @@ class FieldUploadBehavior extends ModelBehavior {
 
 	public function afterFind(Model $Model, $results, $primary = false) {
 		debug("Finding {$Model->alias}");
-		
+
 		// Adds additional information to the find result pertaining to the uploaded files
 		foreach ($this->fields[$Model->alias] as $field => $fieldConfig) {
 			if (isset($results[$field])) {
@@ -428,7 +428,7 @@ class FieldUploadBehavior extends ModelBehavior {
 			if (!empty($value)) {
 				$path = Folder::addPathElement($root, $size);
 				$path = Folder::slashTerm($path) . $value;
-				if (strpos($path, $webroot) === 0) {
+				if (!empty($webroot) && strpos($path, $webroot) === 0) {
 					$src = substr($path, strlen($webroot) - 1);
 					if (DS == '\\') {
 						$src = str_replace(DS, '/', $src);
