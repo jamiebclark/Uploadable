@@ -35,6 +35,12 @@ class FieldUploadBehavior extends ModelBehavior {
 			// Makes sure an "empty" and ".gitignore" file are created in any upload directories	
 			'gitignore' => true,
 		];
+
+		// Corrects for development branch environment
+		if ($defaultFieldSettings['root'] == '/home/souper/public_sub_html/development/app/webroot/') {
+			$defaultFieldSettings['root'] = '/home/souper/public_html/app/webroot/';
+		}
+
 		if (empty($settings['fields'])) {
 			$fields = $settings;
 			$settings = [];
