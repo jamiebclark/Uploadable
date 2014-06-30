@@ -98,6 +98,7 @@ class FieldUploadBehavior extends ModelBehavior {
 				}
 			}
 		}
+		//debug($results);
 		return $results;
 	}
 
@@ -438,7 +439,6 @@ class FieldUploadBehavior extends ModelBehavior {
 			}
 			$result['sizes'][$size] = compact('path', 'src', 'width', 'height', 'mime', 'filesize'); 
 		endforeach;
-		debug(compact('root', 'webRoot', 'result'));
 		return $result;
 	}
 
