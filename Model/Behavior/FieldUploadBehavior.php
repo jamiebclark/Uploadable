@@ -256,11 +256,12 @@ class FieldUploadBehavior extends ModelBehavior {
 			$config['randomPath'] = false;	//Turns it off before passing to the Upload Utility so we don't do it twice
 		}
 
-		if (!empty($config['gitignore'])) {
-			Upload::gitIgnore($this->_getFieldDir($Model, $field));
-		}
-
 		if ($result = Upload::copy($data, $dirs, $config)) {
+
+			if (!empty($config['gitignore'])) {
+				Upload::gitIgnore($this->_getFieldDir($Model, $field));
+			}
+
 			$Model->save([
 				$Model->primaryKey => $Model->id,
 				$field => $config['filename']
