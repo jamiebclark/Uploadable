@@ -416,6 +416,11 @@ class FieldUploadBehavior extends ModelBehavior {
 		$root = Folder::slashTerm($this->_getFieldDir($Model, $field));
 		$webroot = $this->_webroot;
 
+		debug('WEbroot');
+		debug($this->_webroot);
+		debug('URL Base');
+		debug($this->_urlBase);
+		
 		foreach ($config['sizes'] as $size => $sizeConfig):
 			$path = $src = $width = $height = $mime = $filesize = null;
 			if (!empty($value)) {
