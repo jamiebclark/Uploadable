@@ -437,7 +437,7 @@ class FieldUploadBehavior extends ModelBehavior {
 					$filesize = filesize($path);
 				}
 			}
-			$result['sizes'][$size] = compact('path', 'src', 'width', 'height', 'mime', 'filesize'); 
+			$result['sizes'][$size] = compact('path', 'src', 'width', 'height', 'mime', 'filesize', 'webRoot'); 
 		endforeach;
 		return $result;
 	}
