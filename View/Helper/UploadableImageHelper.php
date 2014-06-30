@@ -62,11 +62,34 @@ class UploadableImageHelper extends AppHelper {
 
 	public function image($data, $field, $size = null, $options = []) {
 		$src = $this->getDataFieldSrc($data, $field, $size);
-		if (!empty($src)) {
-			return $this->Html->image($src, $this->parseOptions($options));
-		} else {
-			return '';
+
+		$url = $urlOptions = false;
+		if (!empty($options['url'])) {
+			$url = $options['url'];
+			$urlOptions = ['escape' => false];
+			unset($options['url']);
 		}
+
+		if (!empty($options['media'])) {
+			$options = $this->addClass($options, 'media-object');
+			if ($url) {
+				$urlOptions = $this->addClass($urlOptions, 'pull-left');
+			} else {
+				$options = $this->addClass($options, 'pull-left');
+			}
+			unset($options['media']);
+		}
+
+		if (!empty($src)) {
+			$return = $this->Html->image($src, $this->parseOptions($options));
+		} else {
+			$return = '';
+		}
+		if ($url) {
+			$return = $this->Html->link($return, $url, $urlOptions);
+		}
+
+		return $return;
 	}
 
 /**

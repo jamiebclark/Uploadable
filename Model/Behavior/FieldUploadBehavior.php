@@ -141,6 +141,18 @@ class FieldUploadBehavior extends ModelBehavior {
 		return $this->_uploadField($Model, $id, ['tmp_name' => $filepath]);
 	}
 
+	public function setUploadFieldSetting(Model $Model, $field, $varName, $value) {
+		if (empty($field)) {
+			foreach ($this->fields[$Model->alias] as $field => $config) {
+				$this->setUploadFieldSetting($Model, $field, $varName, $value);
+			}
+		} else if (empty($this->fields[$Model->alias][$field])) {
+			throw new Exception (sprintf('Could not set field setting for %s model field: %s. Field not found', $Model->alias, $field));
+		} else {
+			$this->fields[$Model->alias][$field][$varName] = $value;
+		}
+	}
+
 	private function _addUploadQueue(Model $Model, $id, $field, $fieldData) {
 		$this->_uploadQueue[$Model->alias][$id][$field] = $fieldData;
 	}
