@@ -1,4 +1,6 @@
 <?php
+App::uses('AttrString', 'Uploadable.Lib');
+
 class UploadableImageHelper extends AppHelper {
 	public $name = 'UploadableImage';
 	public $helpers = array('Html', 'Form');
@@ -63,6 +65,10 @@ class UploadableImageHelper extends AppHelper {
 	public function image($data, $field, $size = null, $options = []) {
 		$src = $this->getDataFieldSrc($data, $field, $size);
 
+		if (is_string($options)) {
+			$options = $this->parseOptions($options);
+		}
+
 		$url = $urlOptions = false;
 		if (!empty($options['url'])) {
 			$url = $options['url'];
@@ -81,7 +87,7 @@ class UploadableImageHelper extends AppHelper {
 		}
 
 		if (!empty($src)) {
-			$return = $this->Html->image($src, $this->parseOptions($options));
+			$return = $this->Html->image($src, $options);
 		} else {
 			$return = '';
 		}
@@ -150,15 +156,12 @@ class UploadableImageHelper extends AppHelper {
 	}
 
 	private function parseOptions($options) {
-		if (!is_array($options)) {
-			$list = explode('|', $options);
-			$options = [];
-			foreach ($list as $val) {
-				if (empty($val)) {
-					continue;
-				}
-				list($key, $val) = explode('=', $val) + [null, null];
-				$options[$key] = $val;
+		if (is_string($options)) {
+			if (substr($options, 0, 1) == '|') {
+				$options = AttrString::parse($options);
+			} else {
+				// Legacy format
+				$options = AttrString::parseColonQuote($options);
 			}
 		}
 		$options = $this->addClass($options, 'uploadable-image');
