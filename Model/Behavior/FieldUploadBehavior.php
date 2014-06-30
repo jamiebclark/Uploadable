@@ -16,6 +16,8 @@ class FieldUploadBehavior extends ModelBehavior {
 	protected $_uploadQueue = [];
 	protected $_deleteQueue = [];
 
+	protected $_webRoot = WWW_ROOT;
+
 	public function setup(Model $Model, $settings =[]) {
 		PluginConfig::init('Uploadable');
 
@@ -26,7 +28,7 @@ class FieldUploadBehavior extends ModelBehavior {
 			// An array of sizes. They'll be set in the _initFieldSettings method
 			'sizes' => null,		
 			// The file root. Defaults to CakePHP's webroot
-			'root' => WWW_ROOT,		
+			'root' => $this->_webRoot,		
 			// Whether the uploaded file is an image or not
 			'isImage' => true,	
 			// Whether a ranom path of folders (eg: "/01/05/72/") should be inserted between the path and filname.
@@ -39,6 +41,7 @@ class FieldUploadBehavior extends ModelBehavior {
 		// Corrects for development branch environment
 		if ($defaultFieldSettings['root'] == '/home/souper/public_sub_html/development/app/webroot/') {
 			$defaultFieldSettings['root'] = '/home/souper/public_html/app/webroot/';
+			$this->_setWebRoot($defaultFieldSettings['root']);
 		}
 
 		if (empty($settings['fields'])) {
@@ -145,6 +148,19 @@ class FieldUploadBehavior extends ModelBehavior {
 
 	public function uploadField(Model $Model, $id, $field, $filepath) {
 		return $this->_uploadField($Model, $id, ['tmp_name' => $filepath]);
+	}
+
+	public function setUploadFieldWebRoot(Model $Model, $root) {
+		$this->_setWebRoot($root);
+		$this->setUploadFieldSetting($Model, null, 'root', $root);
+	}
+
+	protected function _setWebRoot($root) {
+		$this->_webRoot = $root;
+	}
+
+	public function getUploadFieldWebRoot(Model $Model) {
+		return $this->_webRoot;
 	}
 
 	public function setUploadFieldSetting(Model $Model, $field, $varName, $value) {
@@ -389,13 +405,14 @@ class FieldUploadBehavior extends ModelBehavior {
 		$result = [];
 		$root = Folder::slashTerm($this->_getFieldDir($Model, $field));
 
+		$webRoot = $this->_webRoot;
 		foreach ($config['sizes'] as $size => $sizeConfig):
 			$path = $src = $width = $height = $mime = $filesize = null;
 			if (!empty($value)) {
 				$path = Folder::addPathElement($root, $size);
 				$path = Folder::slashTerm($path) . $value;
-				if (strpos($path, WWW_ROOT) === 0) {
-					$src = substr($path, strlen(WWW_ROOT) - 1);
+				if (strpos($path, $webRoot) === 0) {
+					$src = substr($path, strlen($webRoot) - 1);
 					if (DS == '\\') {
 						$src = str_replace(DS, '/', $src);
 					}
