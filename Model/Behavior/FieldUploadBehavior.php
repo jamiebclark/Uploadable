@@ -20,7 +20,7 @@ class FieldUploadBehavior extends ModelBehavior {
 	protected $_urlBase = null;
 
 	public function setup(Model $Model, $settings =[]) {
-		PluginConfig::init('Uploadable');
+		PluginConfig::initReplace('Uploadable');
 
 		// Fields Settings
 		$defaultFieldSettings = [
@@ -185,6 +185,10 @@ class FieldUploadBehavior extends ModelBehavior {
 		}
 	}
 
+	public function copyFromOldUploadable() {
+
+	}
+
 	private function _addUploadQueue(Model $Model, $id, $field, $fieldData) {
 		$this->_uploadQueue[$Model->alias][$id][$field] = $fieldData;
 	}
@@ -259,6 +263,7 @@ class FieldUploadBehavior extends ModelBehavior {
 			throw new Exception(sprintf('FieldUpload cannot work with field: "%s". No config information found', $field));
 		}
 		$config = $this->fields[$Model->alias][$field];
+		debug($config);
 
 		$dirs = $this->_getFieldSizeDirs($Model, $field);
 

@@ -189,6 +189,7 @@ class Upload {
 		}
 		if (!empty($rules['set'])) {
 			//Force an image to fit dimensions. Sizes until it fits, the crops off anything hanging off the sides
+			EasyLog::log('Forcing image to fit dimensions: ' . implode(', ', $rules['set']));
 			$img = Image::constrainCrop($img, $rules['set'][0], $rules['set'][1]);
 		}
 		if (!empty($rules['setSoft'])) {
