@@ -114,6 +114,25 @@ class UploadableImageHelper extends AppHelper {
 			$caption = $this->Html->tag('p', $options['caption'], ['class' => 'caption', 'escape' => false]);
 			$captionOptions = $this->addClass(['escape' => false, 'class' => 'uploadable-thumbnail thumbnail'], $alignClass);
 			unset($options['caption']);
+
+			// Moves certain attributes from the image options to the caption options
+			$copyAttrs = ['width', 'height'];
+			foreach ($copyAttrs as $attr) {
+				if (isset($options[$attr])) {
+					$captionOptions[$attr] = $options[$attr];
+					unset($options[$attr]);
+				}
+			}
+
+			// Moves some attributes from individual attributes to CSS styles
+			$styleCopy = ['width', 'height'];
+			foreach ($styleCopy as $attr) {
+				if (isset($captionOptions[$attr])) {
+					$captionOptions = $this->addClass($captionOptions, "$attr: {$captionOptions[$attr]};", 'style');
+					unset($captionOptions[$attr]);
+				}
+			}
+
 		} else {
 			$options = $this->addClass($options, $alignClass);
 		}
@@ -126,7 +145,7 @@ class UploadableImageHelper extends AppHelper {
 		}
 
 		if (!empty($caption)) {
-			$return = $this->Html->tag('span', $return . $caption, $captionOptions);
+			$return = $this->Html->tag('div', $return . $caption, $captionOptions);
 		} 
 
 		if ($url) {
