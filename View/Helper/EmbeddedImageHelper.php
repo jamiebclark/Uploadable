@@ -82,7 +82,7 @@ class EmbeddedImageHelper extends AppHelper {
 		$this->_embedImageResult = $result;
 		$this->_embedImageOptions = $options;
 
-		$this->DisplayText->registerTextMethod('embedImages', [$this, 'replace'], null, ['before' => 'truncate']);
+		$this->DisplayText->registerTextMethod('embedImages', [$this, 'replace'], null, 'before', 'format');
 	}
 
 	public function replace($text, $result = null, $options = []) {
@@ -118,7 +118,7 @@ class EmbeddedImageHelper extends AppHelper {
 				$set = '';
 
 				if (!empty($result[$uid])) {
-					$set = $this->UploadableImage->image($result[$uid], 'filename', $size, $attrs);
+					$set = $this->UploadableImage->image($result[$uid], 'filename', $size, $attrs, ['align' => 'left']);
 				}
 				$replace[$match] = $set;
 			}

@@ -62,12 +62,20 @@ class UploadableImageHelper extends AppHelper {
 		return $out;
 	}
 
-	public function image($data, $field, $size = null, $options = []) {
-		$src = $this->getDataFieldSrc($data, $field, $size);
-
+	public function image($data, $field, $size = null, $options = [], $defaultOptions = []) {
 		if (is_string($options)) {
 			$options = $this->parseOptions($options);
 		}
+		if (is_array($defaultOptions)) {
+			$options = array_merge($defaultOptions, $options);
+		}
+
+		if (!empty($options['size'])) {
+			$size = $options['size'];
+			unset($options['size']);
+		}
+
+		$src = $this->getDataFieldSrc($data, $field, $size);
 
 		$url = $urlOptions = false;
 		if (!empty($options['url'])) {
@@ -86,10 +94,36 @@ class UploadableImageHelper extends AppHelper {
 			unset($options['media']);
 		}
 
+		if (!empty($options['caption'])) {
+			$caption = $options['caption'];
+			unset($options['caption']);
+		}
+
+		if (!empty($options['align'])) {
+			switch($options['align']) {
+				case 'left':
+					$options = $this->addClass($options, 'pull-left');
+					break;
+				case 'right':
+					$options = $this->addClass($options, 'pull-right');
+					break;
+				case 'center':
+					$options = $this->addClass($options, 'text-center');
+					break;
+			}
+			unset($options['align']);
+		}
+
 		if (!empty($src)) {
 			$return = $this->Html->image($src, $options);
 		} else {
 			$return = '';
+		}
+		if (!empty($caption)) {
+			$return = $this->Html->tag('span', 
+				$return . $this->Html->tag('p', $caption, ['class' => 'caption', 'escape' => false]), 
+				['escape' => false, 'class' => 'thumbnail']
+			);
 		}
 		if ($url) {
 			$return = $this->Html->link($return, $url, $urlOptions);
