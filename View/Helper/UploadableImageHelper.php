@@ -144,13 +144,13 @@ class UploadableImageHelper extends AppHelper {
 			$return = '';
 		}
 
-		if (!empty($caption)) {
-			$return = $this->Html->tag('div', $return . $caption, $captionOptions);
-		} 
-
 		if ($url) {
 			$return = $this->Html->link($return, $url, $urlOptions);
 		}
+
+		if (!empty($caption)) {
+			$return = $this->Html->tag('div', $return . $caption, $captionOptions);
+		} 
 
 		return $return;
 	}
