@@ -112,7 +112,7 @@ class UploadableImageHelper extends AppHelper {
 
 		if (!empty($options['caption'])) {
 			$caption = $this->Html->tag('p', $options['caption'], ['class' => 'caption', 'escape' => false]);
-			$captionOptions = $this->addClass(['escape' => false, 'class' => 'thumbnail'], $alignClass);
+			$captionOptions = $this->addClass(['escape' => false, 'class' => 'uploadable-thumbnail thumbnail'], $alignClass);
 			unset($options['caption']);
 		} else {
 			$options = $this->addClass($options, $alignClass);
@@ -124,11 +124,9 @@ class UploadableImageHelper extends AppHelper {
 		} else {
 			$return = '';
 		}
+
 		if (!empty($caption)) {
-			$return = $this->Html->tag('span', 
-				$return . $caption, 
-				$captionOptions
-			);
+			$return = $this->Html->tag('span', $return . $caption, $captionOptions);
 		} 
 
 		if ($url) {
