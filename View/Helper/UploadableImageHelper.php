@@ -94,25 +94,30 @@ class UploadableImageHelper extends AppHelper {
 			unset($options['media']);
 		}
 
-		if (!empty($options['caption'])) {
-			$caption = $options['caption'];
-			unset($options['caption']);
-		}
-
+		$alignClass = '';
 		if (!empty($options['align'])) {
 			switch($options['align']) {
 				case 'left':
-					$options = $this->addClass($options, 'pull-left');
+					$alignClass = 'pull-left';
 					break;
 				case 'right':
-					$options = $this->addClass($options, 'pull-right');
+					$alignClass = 'pull-right';
 					break;
 				case 'center':
-					$options = $this->addClass($options, 'text-center');
+					$alignClass = 'text-center';
 					break;
 			}
 			unset($options['align']);
 		}
+
+		if (!empty($options['caption'])) {
+			$caption = $this->Html->tag('p', $options['caption'], ['class' => 'caption', 'escape' => false]);
+			$captionOptions = $this->addClass(['escape' => false, 'class' => 'thumbnail'], $alignClass);
+			unset($options['caption']);
+		} else {
+			$options = $this->addClass($options, $alignClass);
+		}
+
 
 		if (!empty($src)) {
 			$return = $this->Html->image($src, $options);
@@ -121,10 +126,11 @@ class UploadableImageHelper extends AppHelper {
 		}
 		if (!empty($caption)) {
 			$return = $this->Html->tag('span', 
-				$return . $this->Html->tag('p', $caption, ['class' => 'caption', 'escape' => false]), 
-				['escape' => false, 'class' => 'thumbnail']
+				$return . $caption, 
+				$captionOptions
 			);
-		}
+		} 
+
 		if ($url) {
 			$return = $this->Html->link($return, $url, $urlOptions);
 		}
