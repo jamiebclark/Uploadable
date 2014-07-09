@@ -263,10 +263,8 @@ class FieldUploadBehavior extends ModelBehavior {
 			throw new Exception(sprintf('FieldUpload cannot work with field: "%s". No config information found', $field));
 		}
 		$config = $this->fields[$Model->alias][$field];
-		debug($config);
-
 		$dirs = $this->_getFieldSizeDirs($Model, $field);
-
+ 
 		if (!is_array($data)) {
 			$data = ['tmp_name' => $data];
 		}
