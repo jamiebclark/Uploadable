@@ -270,6 +270,7 @@ class Upload {
 				$empty = false;
 			}
 		}
+		debug(compact('dir', 'files', 'empty'));
 		return $empty && rmdir($dir);
 	}
 
