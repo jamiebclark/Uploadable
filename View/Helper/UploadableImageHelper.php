@@ -155,6 +155,17 @@ class UploadableImageHelper extends AppHelper {
 		return $return;
 	}
 
+	public function src($data, $field, $size = null) {
+		if ($src = $this->getDataFieldSrc($data, $field, $size)) {
+			if ($src[0] != '/') {
+				$src = Configure::read('App.imageBaseUrl') . $src;
+			} else {
+				$src = Router::url($src);
+			}
+		}
+		return $src;
+	}
+
 /**
  * Finds the information pertaining to the Uploadable image from a passed result
  * 
