@@ -1,8 +1,13 @@
 <?php
+/**
+ * Helper to assist with outputing information using the FieldUpload behavior in the Uploadable plugin
+ *
+ * @package app.Plugin.Uploadable.VIew
+ **/
 App::uses('AttrString', 'Uploadable.Lib');
 
-class UploadableImageHelper extends AppHelper {
-	public $name = 'UploadableImage';
+class FieldUploadImageHelper extends AppHelper {
+	public $name = 'FieldUploadImage';
 	public $helpers = array('Html', 'Form');
 
 	public function beforeRender($viewFile, $options = []) {
@@ -30,7 +35,7 @@ class UploadableImageHelper extends AppHelper {
 		} else {
 			$size = null;
 		}
-		
+
 
 		if (!empty($fieldParts)) {
 			$count = count($fieldParts);
@@ -68,8 +73,8 @@ class UploadableImageHelper extends AppHelper {
 				])) {
 				$out .= $img;
 				$out .= $this->Form->input("$dataName.$field.delete", [
-					'type' => 'checkbox',
 					'class' => 'checkbox',
+					'type' => 'checkbox',
 					'label' => 'Delete photo',
 				]);
 			}

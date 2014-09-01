@@ -14,8 +14,10 @@ class FieldUploadBehavior extends ModelBehavior {
 
 	// Created in beforeSave and executed in afterSave
 	protected $_uploadQueue = [];
+	// Created in beforeSave and executed in afterSave
 	protected $_deleteQueue = [];
 
+	// The webroot
 	protected $_webroot = WWW_ROOT;
 	protected $_urlBase = null;
 
