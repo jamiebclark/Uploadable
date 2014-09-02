@@ -39,6 +39,9 @@ class FieldUploadBehavior extends ModelBehavior {
 			'randomPath' => true,
 			// Makes sure an "empty" and ".gitignore" file are created in any upload directories	
 			'gitignore' => true,
+
+			// Path to a default image if a user does not specify one
+			'default' => null,
 		];
 
 		// Corrects for development branch environment
@@ -83,22 +86,24 @@ class FieldUploadBehavior extends ModelBehavior {
 	public function afterFind(Model $Model, $results, $primary = false) {
 		// Adds additional information to the find result pertaining to the uploaded files
 		foreach ($this->fields[$Model->alias] as $field => $fieldConfig) {
-			if (isset($results[$field])) {
+			if (array_key_exists($field, $results)) {
 				$results['uploadable'][$field] = $this->_setResultField($Model, $results[$field]);
-			} else if (isset($results[$Model->alias][$field])) {
+			} else if (isset($results[$Model->alias]) && array_key_exists($field, $results[$Model->alias])) {
 				// Single row result
 				$results[$Model->alias]['uploadable'][$field] = $this->_setResultField($Model, $field, $results[$Model->alias][$field]);
-			} else if (isset($results[0][$Model->alias][$field])) {
+			} else if (isset($results[0][$Model->alias]) && array_key_exists($field, $results[0][$Model->alias])) {
 				// Multiple row result
 				foreach ($results as $k => $row) {
 					$results[$k][$Model->alias]['uploadable'][$field] = $this->_setResultField($Model, $field, $row[$Model->alias][$field]);
 				}
-			} else if (isset($results[$Model->alias][0][$field])) {
+			} else if (isset($results[$Model->alias][0]) && array_key_exists($field, $results[$Model->alias][0])) {
 				// Associated result
 				foreach ($results[$Model->alias] as $k => $row) {
 					$results[$Model->alias][$k]['uploadable'][$field] = $this->_setResultField($Model, $field, $row[$field]);
 				}
 			}
+
+
 		}
 		//debug($results);
 		return $results;
@@ -412,6 +417,14 @@ class FieldUploadBehavior extends ModelBehavior {
 		return $config;
 	}
 
+/**
+ * Retrieves the image information stored in a field, used for a result array
+ *
+ * @param Model $Model The associated model
+ * @param string $field The model field
+ * @param string $value The current value of the model's field
+ * @return array An array with information for each size associated with the image field
+ **/
 	private function _setResultField(Model $Model, $field, $value) {
 		App::uses('Folder', 'Utility');
 
@@ -423,28 +436,76 @@ class FieldUploadBehavior extends ModelBehavior {
 
 		foreach ($config['sizes'] as $size => $sizeConfig):
 			$path = $src = $width = $height = $mime = $filesize = null;
+			$info = array();
 			if (!empty($value)) {
 				$path = Folder::addPathElement($root, $size);
 				$path = Folder::slashTerm($path) . $value;
-				if (!empty($webroot) && strpos($path, $webroot) === 0) {
-					$src = substr($path, strlen($webroot) - 1);
-					if (DS == '\\') {
-						$src = str_replace(DS, '/', $src);
-					}
-					if (!empty($this->_urlBase)) {
-						$src = $this->_urlBase . $src;
-					}
-				}
-				if (is_file($path)) {
-					$info = getimagesize($path);
-					list($width, $height) = $info;
-					$mime = $info['mime'];
-					$filesize = filesize($path);
+				$info = $this->_getImageInfo($path);
+			}
+
+			// Checks for default images if path is not found
+			if (empty($info['path']) && !empty($config['default'])) {
+				$path = Folder::addPathElement($root, $size);
+				$path = Folder::slashTerm($path) . 'default.jpg';
+				$info = $this->_getImageInfo($path);
+				if (empty($info['path'])) {
+					$this->_updateDefaultImage($Model, $field);
+					$info = $this->_getImageInfo($path);
 				}
 			}
-			$result['sizes'][$size] = compact('path', 'src', 'width', 'height', 'mime', 'filesize', 'webroot'); 
+			$result['sizes'][$size] = $info; 
 		endforeach;
 		return $result;
+	}
+
+/**
+ * Retrieves information about an image
+ *
+ * @param string $path The path to the image
+ * @return array An array of image information. All will be set to null if image is not found
+ **/
+	private function _getImageInfo($path) {
+		$webroot = $this->_webroot;
+		$src = $width = $height = $mime = $filesize = null;
+		if (!empty($webroot) && strpos($path, $webroot) === 0) {
+			$src = substr($path, strlen($webroot) - 1);
+			if (DS == '\\') {
+				$src = str_replace(DS, '/', $src);
+			}
+			if (!empty($this->_urlBase)) {
+				$src = $this->_urlBase . $src;
+			}
+		}
+		if (is_file($path)) {
+			$info = getimagesize($path);
+			list($width, $height) = $info;
+			$mime = $info['mime'];
+			$filesize = filesize($path);
+		} else {
+			$path = null;
+		}
+
+		return compact('path', 'src', 'width', 'height', 'mime', 'filesize', 'webroot');
+	}
+
+/**
+ * Takes a default image in the config and makes sure it exists for all sizes of the image
+ *
+ **/
+	private function _updateDefaultImage(Model $Model, $field) {
+		$config = $this->fields[$Model->alias][$field];
+		if (!empty($config['default'])) {
+			$dirs = $this->_getFieldSizeDirs($Model, $field);
+			$defaultImagePath = $this->_webroot . $config['default'];
+			$data = array('name' => $defaultImagePath, 'tmp_name' => $defaultImagePath);
+	
+			$config['filename'] = 'default.jpg';
+			unset($config['randomPath']);
+
+			debug(compact('data', 'dirs', 'config'));
+			return Upload::copy($data, $dirs, $config);
+		}
+		return null;
 	}
 
 /**
