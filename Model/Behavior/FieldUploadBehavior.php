@@ -498,11 +498,8 @@ class FieldUploadBehavior extends ModelBehavior {
 			$dirs = $this->_getFieldSizeDirs($Model, $field);
 			$defaultImagePath = $this->_webroot . $config['default'];
 			$data = array('name' => $defaultImagePath, 'tmp_name' => $defaultImagePath);
-	
 			$config['filename'] = 'default.jpg';
 			unset($config['randomPath']);
-
-			debug(compact('data', 'dirs', 'config'));
 			return Upload::copy($data, $dirs, $config);
 		}
 		return null;
