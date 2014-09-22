@@ -497,6 +497,9 @@ class FieldUploadBehavior extends ModelBehavior {
 		if (!empty($config['default'])) {
 			$dirs = $this->_getFieldSizeDirs($Model, $field);
 			$defaultImagePath = $this->_webroot . $config['default'];
+			if (DS == '\\') {
+				$defaultImagePath = str_replace('\\', '/', $defaultImagePath);
+			}
 			$data = array('name' => $defaultImagePath, 'tmp_name' => $defaultImagePath);
 			$config['filename'] = 'default.jpg';
 			unset($config['randomPath']);
