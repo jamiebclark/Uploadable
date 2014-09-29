@@ -85,26 +85,7 @@ class FieldUploadBehavior extends ModelBehavior {
 
 	public function afterFind(Model $Model, $results, $primary = false) {
 		// Adds additional information to the find result pertaining to the uploaded files
-		foreach ($this->fields[$Model->alias] as $field => $fieldConfig) {
-			if (array_key_exists($field, $results)) {
-				$results['uploadable'][$field] = $this->_setResultField($Model, $results[$field]);
-			} else if (isset($results[$Model->alias]) && array_key_exists($field, $results[$Model->alias])) {
-				// Single row result
-				$results[$Model->alias]['uploadable'][$field] = $this->_setResultField($Model, $field, $results[$Model->alias][$field]);
-			} else if (isset($results[0][$Model->alias]) && array_key_exists($field, $results[0][$Model->alias])) {
-				// Multiple row result
-				foreach ($results as $k => $row) {
-					$results[$k][$Model->alias]['uploadable'][$field] = $this->_setResultField($Model, $field, $row[$Model->alias][$field]);
-				}
-			} else if (isset($results[$Model->alias][0]) && array_key_exists($field, $results[$Model->alias][0])) {
-				// Associated result
-				foreach ($results[$Model->alias] as $k => $row) {
-					$results[$Model->alias][$k]['uploadable'][$field] = $this->_setResultField($Model, $field, $row[$field]);
-				}
-			}
-
-
-		}
+		$results = $this->setFieldUploadResultFields($Model, $results, $primary);
 		//debug($results);
 		return $results;
 	}
@@ -163,6 +144,28 @@ class FieldUploadBehavior extends ModelBehavior {
 	public function setUploadFieldWebRoot(Model $Model, $root) {
 		$this->_setWebRoot($root);
 		$this->setUploadFieldSetting($Model, null, 'root', $root);
+	}
+
+	public function setFieldUploadResultFields(Model $Model, $results, $primary = false) {
+		foreach ($this->fields[$Model->alias] as $field => $fieldConfig) {
+			if (array_key_exists($field, $results)) {
+				$results['uploadable'][$field] = $this->_setResultField($Model, $results[$field]);
+			} else if (isset($results[$Model->alias]) && array_key_exists($field, $results[$Model->alias])) {
+				// Single row result
+				$results[$Model->alias]['uploadable'][$field] = $this->_setResultField($Model, $field, $results[$Model->alias][$field]);
+			} else if (isset($results[0][$Model->alias]) && array_key_exists($field, $results[0][$Model->alias])) {
+				// Multiple row result
+				foreach ($results as $k => $row) {
+					$results[$k][$Model->alias]['uploadable'][$field] = $this->_setResultField($Model, $field, $row[$Model->alias][$field]);
+				}
+			} else if (isset($results[$Model->alias][0]) && array_key_exists($field, $results[$Model->alias][0])) {
+				// Associated result
+				foreach ($results[$Model->alias] as $k => $row) {
+					$results[$Model->alias][$k]['uploadable'][$field] = $this->_setResultField($Model, $field, $row[$field]);
+				}
+			}
+		}
+		return $results;
 	}
 
 	protected function _setWebRoot($root) {
