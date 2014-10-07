@@ -1,10 +1,15 @@
 <?php
+/**
+ * Works with the Uploadable Plugin to handle the finer points of uploading a file
+ *
+ * @package app.Plugin.Uploadable.Lib
+ **/
+
 App::uses('File', 'Utility');
 App::uses('Folder', 'Utility');
 
 App::uses('Param', 'Uploadable.Lib');
 App::uses('Image', 'Uploadable.Lib');
-
 App::uses('EasyLog', 'Uploadable.Lib');
 
 class Upload {
@@ -15,6 +20,8 @@ class Upload {
  * @param string|Array $src Either a path to a file, or a $_POST data array
  * @param string|Array $dst Eitehr a path or an array of paths
  * @param Array $options Optional additional parameters
+ * @return array An array with the result information
+ * @access public
  **/
 	public static function copy($src, $dst, $options = null) {
 		EasyLog::log("Starting Upload copy");
@@ -141,6 +148,13 @@ class Upload {
 		return $return;
 	}
 
+/**
+ * Creates a gitignore file in the upload directory if one hasn't been created
+ * 
+ * @param string $dir The upload directory path
+ * @return void
+ * @access public
+ **/
 	public static function gitIgnore($dir) {
 		$dir = Folder::slashTerm(self::_dsFixFile($dir));
 		
@@ -160,12 +174,26 @@ class Upload {
 			if (!$file = fopen($ignoreFile, 'w')) {
 				throw new Exception("Could not create .gitignore file: $ignoreFile");
 			}
-			fwrite($file, "*\n");		//Ignores everything
-			fwrite($file, "!empty\n");	//Except the empty file
+			fwrite($file, "*\n");			//Ignores everything
+			fwrite($file, "!empty\n");		//Except the empty file
+			fwrite($file, "default.jpg\n");	//And a default file
 			fclose($file);			
 		}
 	}
 
+/**
+ * Copies an image from a destination to a source, processing it through a number of rules
+ *
+ * @param string $src The image source
+ * @param string $dst The copy destination
+ * @param array $rules An array of rules to dictate how the image is processed
+ * 		- `convert` - Convert the image to a new image type
+ *		- `max` - Resize an image if it's boundaries exceed this value
+ *		- `set` - Force an image to fit dimensions. Sizes until it fits, the crops off anything hanging off the sides
+ *		- `setSoft` - Force an image to fit dimensions. Sizes until it all fits. If dimensions don't match, background will show
+ * @return bool True on success, false on failure
+ * @access public
+ **/
 	public static function copyImage($src, $dst, $rules = []) {
 		EasyLog::log("Copying image from $src to $dst");
 		$Src = new File($src);
@@ -225,8 +253,18 @@ class Upload {
 		return true;
 	}
 
+/**
+ * Copies a file from a source to a destination path
+ *
+ * @param string $src The file path
+ * @param string $dst The destination where it will be copied
+ * @return bool True on success, false on failure
+ * @access public
+ **/
 	public static function copyFile($src, $dst) {
 		$Src = new File($src);
+		App::uses('File', 'Utility');
+
 		$success = $Src->copy($dst, true);
 		if (!$success) {
 			EasyLog::error($Src->errors());
@@ -260,6 +298,13 @@ class Upload {
 		return $path;
 	}
 
+/**
+ * Deletes any empty subfolders within an upload directory
+ * 
+ * @param string $dir The path to the upload directory
+ * @return bool True on success. False on failure
+ * @access public
+ **/
 	public static function removeEmptySubFolders($dir) {
 		$empty = true;
 		$files = glob(Folder::slashTerm($dir) . '*');
