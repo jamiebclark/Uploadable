@@ -20,7 +20,11 @@ class FieldUploadBehavior extends ModelBehavior {
 	protected $_urlBase = null;
 
 	public function setup(Model $Model, $settings =[]) {
-		PluginConfig::initReplace('Uploadable');
+		App::uses('PluginConfig', 'Uploadable.Lib');
+		$PluginConfig = new PluginConfig();
+		if (method_exists($PluginConfig, 'initReplace')) {
+			PluginConfig::initReplace('Uploadable');
+		}
 
 		// Fields Settings
 		$defaultFieldSettings = [
