@@ -21,6 +21,8 @@ class FieldUploadBehavior extends ModelBehavior {
 	protected $_webroot = WWW_ROOT;
 	protected $_urlBase = null;
 
+	private $_deleteId;
+
 	public function setup(Model $Model, $settings =[]) {
 		App::uses('PluginConfig', 'Uploadable.Lib');
 		$PluginConfig = new PluginConfig();
@@ -132,12 +134,17 @@ class FieldUploadBehavior extends ModelBehavior {
 	public function beforeDelete(Model $Model, $cascade = true) {
 		// Stores files to be deleted after the Model is deleted
 		$this->_addDeleteQueue($Model, $Model->id);
+		$this->_deleteId = $Model->id;
 		return parent::beforeDelete($Model, $cascade);
 	}
 
 	public function afterDelete(Model $Model) {
 		// Deletes any queueed files
-		$this->_startDeleteQueue($Model);
+		if (!empty($this->_deleteId)) {
+			$this->_startDeleteQueue($Model, $this->_deleteId);
+			unset($this->_deleteId);
+		}
+
 		return parent::afterDelete($Model);
 	}
 
