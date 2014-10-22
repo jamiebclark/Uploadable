@@ -58,7 +58,7 @@ class EmbeddedImageHelper extends AppHelper {
 				$out .= $View->Form->hidden("$prefix.model", ['value' => $model]);
 
 				$out .=  $View->FormLayout->inputCopy('tmp', array(
-					'class' => 'input-small',
+					'class' => 'form-control',
 					'name' => "$prefix.tmp",
 					'form' => false,
 					'value' => "<Photo $uid>",
