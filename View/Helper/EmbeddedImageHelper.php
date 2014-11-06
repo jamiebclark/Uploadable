@@ -33,7 +33,7 @@ class EmbeddedImageHelper extends AppHelper {
 		<div class="panel panel-default input-embedded-images">
 			<div class="panel-heading">Embedded Images</div>
 			<div class="panel-body">
-				<p class="note">
+				<p class="help-block">
 					To add an image to the copy of your document, first add it to this section. 
 					It will generate a string that looks like <em>&lt;Photo&nbsp;1&gt;</em>. 
 					Copy and paste that into the body of your document, and it will be swapped out with image when it's displayed. 
