@@ -30,47 +30,49 @@ class EmbeddedImageHelper extends AppHelper {
 		$View = $this;
 		ob_start();
 		?>
-		<div class="box input-embedded-images">
-			<h3 class="box-header">Embedded Images</h3>
-			<p class="note">
-				To add an image to the copy of your document, first add it to this section. 
-				It will generate a string that looks like <em>&lt;Photo&nbsp;1&gt;</em>. 
-				Copy and paste that into the body of your document, and it will be swapped out with image when it's displayed. 
-			</p>
-			<?php
-			echo $this->FormLayout->inputList(function($count) use ($View, $model) {
-				$prefix = "EmbeddedImage.$count";
-				$uid = $count + 1;
-				if ($View->Html->value("$prefix.uid")) {
-					$uid = $View->Html->value("$prefix.uid");
-				} else if ($View->Html->value('EmbeddedImage')) {
-					// Finds largest stored UID
-					foreach ($View->Html->value('EmbeddedImage') as $embeddedImage) {
-						if ($embeddedImage['uid'] > $uid) {
-							$uid = $embeddedImage['uid'] + 1;
+		<div class="panel panel-default input-embedded-images">
+			<div class="panel-heading">Embedded Images</div>
+			<div class="panel-body">
+				<p class="help-block">
+					To add an image to the copy of your document, first add it to this section. 
+					It will generate a string that looks like <em>&lt;Photo&nbsp;1&gt;</em>. 
+					Copy and paste that into the body of your document, and it will be swapped out with image when it's displayed. 
+				</p>
+				<?php
+				echo $this->FormLayout->inputList(function($count) use ($View, $model) {
+					$prefix = "EmbeddedImage.$count";
+					$uid = $count + 1;
+					if ($View->Html->value("$prefix.uid")) {
+						$uid = $View->Html->value("$prefix.uid");
+					} else if ($View->Html->value('EmbeddedImage')) {
+						// Finds largest stored UID
+						foreach ($View->Html->value('EmbeddedImage') as $embeddedImage) {
+							if ($embeddedImage['uid'] > $uid) {
+								$uid = $embeddedImage['uid'] + 1;
+							}
 						}
 					}
-				}
 
-				$out = '';
-				$out .= $View->Form->hidden("$prefix.id");
-				$out .= $View->Form->hidden("$prefix.uid", ['value' => $uid]);
-				$out .= $View->Form->hidden("$prefix.model", ['value' => $model]);
+					$out = '';
+					$out .= $View->Form->hidden("$prefix.id");
+					$out .= $View->Form->hidden("$prefix.uid", ['value' => $uid]);
+					$out .= $View->Form->hidden("$prefix.model", ['value' => $model]);
 
-				$out .=  $View->FormLayout->inputCopy('tmp', array(
-					'class' => 'form-control',
-					'name' => "$prefix.tmp",
-					'form' => false,
-					'value' => "<Photo $uid>",
-					'label' => 'Copy and Paste',
-				));
-				$out .= $View->UploadableImage->input("$prefix.filename", ['size' => 'thumb']);
-				return $out;
-			}, [
-				'model' => 'EmbeddedImage',
-				'class' => 'embedded-image-input-list',
-			]);
-			?>
+					$out .=  $View->FormLayout->inputCopy('tmp', array(
+						'class' => 'form-control',
+						'name' => "$prefix.tmp",
+						'form' => false,
+						'value' => "<Photo $uid>",
+						'label' => 'Copy and Paste',
+					));
+					$out .= $View->UploadableImage->input("$prefix.filename", ['size' => 'thumb']);
+					return $out;
+				}, [
+					'model' => 'EmbeddedImage',
+					'class' => 'embedded-image-input-list',
+				]);
+				?>
+			</div>
 		</div>
 		<?php
 		return ob_get_clean();		
