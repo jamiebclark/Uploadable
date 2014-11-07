@@ -12,6 +12,9 @@ App::uses('Param', 'Uploadable.Lib');
 App::uses('Image', 'Uploadable.Lib');
 App::uses('EasyLog', 'Uploadable.Lib');
 
+App::uses('CakeEvent', 'Event');
+App::uses('CakeEventManager', 'Event');
+
 class Upload {
 
 /**
@@ -250,7 +253,19 @@ class Upload {
 		} else {
 			@chmod($dst, 0755);
 		}
+
+		self::dispatchAfterUpload($dst);
 		return true;
+	}
+
+	public static function dispatchAfterUpload($path) {
+		if (is_object($path)) {
+			$File = $path;
+		} else {
+			$File = new File($path);
+		}
+		$event = new CakeEvent('File.afterUpload', $File);
+		return CakeEventManager::instance()->dispatch($event);
 	}
 
 /**
@@ -269,6 +284,7 @@ class Upload {
 		if (!$success) {
 			EasyLog::error($Src->errors());
 		}
+		self::dispatchAfterUpload($dst);
 		return $success;
 	}
 
