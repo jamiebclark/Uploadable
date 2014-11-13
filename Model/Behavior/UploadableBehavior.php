@@ -3,6 +3,8 @@ App::import('Lib', 'Uploadable.Param');
 App::import('Lib', 'File');
 App::import('Lib', 'Folder');
 
+App::uses('Upload', 'Uploadable.Lib');
+
 class UploadableBehavior extends ModelBehavior {
 	var $settings = array();
 	var $errorTypes = array(
@@ -503,6 +505,7 @@ class UploadableBehavior extends ModelBehavior {
 				$savedDirSettings = true;
 			}
 		}	
+		Upload::dispatchAfterUpload($dst);
 		return $options['callbacks'] ? $this->afterFileSave($Model) : true;
 	}
 	

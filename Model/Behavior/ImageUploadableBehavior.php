@@ -1,6 +1,8 @@
 <?php
 App::import('Lib', 'Uploadable.Image');
 App::import('Behavior', 'Uploadable.Uploadable');
+
+
 class ImageUploadableBehavior extends UploadableBehavior {
 	function setup(Model $Model, $settings = array()) {
 		$settings['exts'] = array('gif', 'jpg', 'jpeg', 'png');
@@ -84,6 +86,7 @@ class ImageUploadableBehavior extends UploadableBehavior {
 		} else {
 			@chmod($dst, 0755);
 		}
+		Upload::dispatchAfterUpload($dst);
 		return true;
 	}
 	
