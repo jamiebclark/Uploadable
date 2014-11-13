@@ -160,7 +160,7 @@ class FieldUploadBehavior extends ModelBehavior {
 	public function setFieldUploadResultFields(Model $Model, $results, $primary = false) {
 		foreach ($this->fields[$Model->alias] as $field => $fieldConfig) {
 			if (array_key_exists($field, $results)) {
-				$results['uploadable'][$field] = $this->_setResultField($Model, $results[$field]);
+				$results['uploadable'][$field] = $this->_setResultField($Model, $field, $results[$field]);
 			} else if (isset($results[$Model->alias]) && array_key_exists($field, $results[$Model->alias])) {
 				// Single row result
 				$results[$Model->alias]['uploadable'][$field] = $this->_setResultField($Model, $field, $results[$Model->alias][$field]);
