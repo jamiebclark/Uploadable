@@ -206,6 +206,28 @@ class FieldUploadBehavior extends ModelBehavior {
 		}
 	}
 
+/**
+ * Finds the image path of a specific size and field
+ * 
+ * @param Model $Model The associated Model object
+ * @param int $id The model id of the object
+ * @param string $field The field of the image in the model
+ * @param string $size The size of the image to use
+ * @return string The path to the image
+ **/
+	public function getFieldUploadImage(Model $Model, $id, $field, $size) {
+		if (empty($this->fields[$Model->alias][$field])) {
+			throw new Exception (sprintf('Cannot find FieldUpload field "%s" for model %s', $field, $Model->alias));
+		}
+		if (empty($this->fields[$Model->alias][$field]['sizes'][$size])) {
+			throw new Exception (sprintf('Model %s and field %s does not have a size set for: %s', $Model->alias, $field, $size));
+		}
+		$result = $Model->read($field, $id);
+		$result = $result[$Model->alias][$field];
+		$result = $this->_setResultField($Model, $field, $result);
+		return $result['sizes'][$size]['path'];
+	}
+
 	public function copyFromOldUploadable() {
 
 	}
