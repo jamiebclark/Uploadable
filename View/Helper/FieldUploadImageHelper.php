@@ -60,7 +60,7 @@ class FieldUploadImageHelper extends AppHelper {
 			$dataName = $model;
 		}
 
-		$out = $this->Form->input("$dataName.$field", ['type' => 'file'] + $options);
+		$out = $this->Form->input("$dataName.$field", ['type' => 'file'] + (array) $options);
 		if ($this->Html->value("uploadable_storage.$dataName")) {
 			$data = unserialize(base64_decode($this->Html->value("uploadable_storage.$dataName")));
 		} else if ($this->Html->value($dataName)) {
