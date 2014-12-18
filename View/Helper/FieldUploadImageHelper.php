@@ -111,6 +111,12 @@ class FieldUploadImageHelper extends AppHelper {
 
 		$src = $this->getDataFieldSrc($data, $field, $size);
 
+		$attrs = $this->getDataFieldSize($data, $field, $size);
+		if (!empty($attrs['modified'])) {
+			$src .= '?m=' . $attrs['modified'];
+		}
+
+
 		$url = $urlOptions = false;
 		if (!empty($options['url'])) {
 			$url = $options['url'];

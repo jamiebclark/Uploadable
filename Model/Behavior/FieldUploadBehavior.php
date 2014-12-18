@@ -471,7 +471,7 @@ class FieldUploadBehavior extends ModelBehavior {
 		$webroot = $this->_webroot;
 
 		foreach ($config['sizes'] as $size => $sizeConfig):
-			$path = $src = $width = $height = $mime = $filesize = null;
+			$path = $src = $width = $height = $mime = $filesize = $modified = null;
 			$info = array();
 			if (!empty($value)) {
 				$path = Folder::addPathElement($root, $size);
@@ -502,7 +502,7 @@ class FieldUploadBehavior extends ModelBehavior {
  **/
 	private function _getImageInfo($path) {
 		$webroot = $this->_webroot;
-		$src = $width = $height = $mime = $filesize = null;
+		$src = $width = $height = $mime = $filesize = $modified = null;
 		if (!empty($webroot) && strpos($path, $webroot) === 0) {
 			$src = substr($path, strlen($webroot) - 1);
 			if (DS == '\\') {
@@ -517,11 +517,12 @@ class FieldUploadBehavior extends ModelBehavior {
 			list($width, $height) = $info;
 			$mime = $info['mime'];
 			$filesize = filesize($path);
+			$modified = filemtime($path);
 		} else {
 			$path = null;
 		}
 
-		return compact('path', 'src', 'width', 'height', 'mime', 'filesize', 'webroot');
+		return compact('path', 'src', 'width', 'height', 'mime', 'filesize', 'webroot', 'modified');
 	}
 
 /**
