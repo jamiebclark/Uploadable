@@ -53,13 +53,12 @@ class Upload {
 		if (isset($options['filename']) && $options['filename'] != '') {
 			$filename = $options['filename'];
 		}
-		
+
 		if (!empty($ext) && strpos($filename, '.') === false) {
 			//Adds an extension if none has been provided
 			$filename .= '.' . $ext;
 		}
 		$filename = self::_dsFixFile($filename);
-
 
 		if (!is_array($dst)) {
 			$dst = [$dst];
