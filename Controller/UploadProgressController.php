@@ -6,6 +6,7 @@ class UploadProgressController extends AppController {
 	public $helpers = array('Uploadable.UploadProgress');
 
 	public function enabled() {
+		Configure::write('debug', 2);
 		debug(array(
 			'PHP' => array(
 				'Version' => phpversion()
