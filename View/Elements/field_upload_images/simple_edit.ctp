@@ -12,6 +12,6 @@ extract(array_merge($default, compact(array_keys($default))));
 
 echo $this->Form->create($className, array('type' => 'file'));
 echo $this->Form->hidden('id');
-echo $this->FieldUploadImage->input($field, $size);
+echo $this->FieldUploadImage->input($field, compact('size'));
 echo $this->Form->button('Update Image', array('class' => 'btn btn-primary btn-lg'));
 echo $this->Form->end();

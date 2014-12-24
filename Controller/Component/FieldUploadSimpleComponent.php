@@ -13,7 +13,7 @@ class FieldUploadSimpleComponent extends Component {
 			$action = substr($action, strlen($request->params['prefix']) + 1);
 		}
 		if ($action == 'field_upload_simple_edit') {
-			list($id, $field) = $request->params['pass'];
+			list($id, $field, $size) = ((array) $request->params['pass']) + array(null, null, null);
 			$Model = ClassRegistry::init($alias);
 
 			if (!empty($request->data)) {
@@ -33,7 +33,7 @@ class FieldUploadSimpleComponent extends Component {
 
 			$request->params['action'] = 'field_upload_simple_edit';
 			$controller->autoRender = false;
-			$controller->set(compact('className', 'field'));
+			$controller->set(compact('className', 'field', 'size'));
 			return $controller->render('Uploadable./Elements/field_upload_images/simple_edit');
 		}
 		return parent::startup($controller);

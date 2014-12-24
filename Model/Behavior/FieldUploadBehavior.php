@@ -253,7 +253,7 @@ class FieldUploadBehavior extends ModelBehavior {
 		if (empty($this->fields[$Model->alias][$field])) {
 			throw new Exception (sprintf('Cannot find FieldUpload field "%s" for model %s', $field, $Model->alias));
 		}
-		if (empty($this->fields[$Model->alias][$field]['sizes'][$size])) {
+		if (!array_key_exists($size, $this->fields[$Model->alias][$field]['sizes'])) {
 			throw new Exception (sprintf('Model %s and field %s does not have a size set for: %s', $Model->alias, $field, $size));
 		}
 		$result = $Model->find('first', array(
