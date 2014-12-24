@@ -5,6 +5,19 @@ class UploadProgressController extends AppController {
 
 	public $helpers = array('Uploadable.UploadProgress');
 
+	public function enabled() {
+		debug(array(
+			'PHP' => array(
+				'Version' => phpversion()
+			),
+			'Session Upload progress' => array(
+				'Enabled' => ini_get('session.upload_progress.enabled'),
+				'Prefix' => ini_get('session.upload_progress.prefix'),
+			)
+		));
+		exit();
+	}
+
 	public function check($uploadKey = null) {
 		if (!empty($uploadKey)) {
 			$sessionKey = ini_get('session.upload_progress.prefix') . $uploadKey;
