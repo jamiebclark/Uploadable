@@ -16,6 +16,7 @@ class UploadProgressController extends AppController {
 				'Prefix' => ini_get('session.upload_progress.prefix'),
 			)
 		));
+		phpinfo();
 		exit();
 	}
 

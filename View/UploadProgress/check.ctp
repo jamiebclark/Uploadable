@@ -1,6 +1,17 @@
 <div class="uploadprogress">
-	<?php if (!empty($uploadProgress)): ?>
-		<h2 class="uploadprogress-title"><?php echo !empty($uploadProgress['done']) ? 'Complete' : 'Uploading'; ?></h2>
+	<?php if (!empty($uploadProgress)): 
+		if (!empty($uploadProgress['done'])) {
+			$title = 'Complete';
+			$icon  = '<i class="fa fa-check"></i>';
+		} else {
+			$title = 'Uploading';
+			$icon = '<i class="fa fa-spinner fa-spin"></i>';
+		}
+		?>
+		<h2 class="uploadprogress-title">
+			<span class="pull-right"><?php echo $icon; ?></span>
+			<?php echo $title; ?>
+		</h2>
 		<div class="uploadprogress-body">
 			<?php echo $this->UploadProgress->startTime($uploadProgress['start_time']); ?>
 			<?php echo $this->UploadProgress->progressBar($uploadProgress['bytes_processed'], $uploadProgress['content_length']); ?>
