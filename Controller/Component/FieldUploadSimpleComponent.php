@@ -8,10 +8,17 @@ class FieldUploadSimpleComponent extends Component {
 		$request =& $controller->request;
 		$alias = $controller->modelClass;
 
+		// Refreshes the default image
+		if (!empty($request->query['refresh_default_image'])) {
+			ClassRegistry::init($alias)->refreshFieldUploadDefaultImage($request->query['refresh_default_image']);
+		}
+
+		// Prefix-less action
 		$action = $request->params['action'];
 		if (!empty($request->params['prefix'])) {
 			$action = substr($action, strlen($request->params['prefix']) + 1);
 		}
+
 		if ($action == 'field_upload_simple_edit') {
 			list($id, $field, $size) = ((array) $request->params['pass']) + array(null, null, null);
 			$Model = ClassRegistry::init($alias);

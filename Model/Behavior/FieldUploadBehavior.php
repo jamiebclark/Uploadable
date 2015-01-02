@@ -92,7 +92,6 @@ class FieldUploadBehavior extends ModelBehavior {
 	public function afterFind(Model $Model, $results, $primary = false) {
 		// Adds additional information to the find result pertaining to the uploaded files
 		$results = $this->setFieldUploadResultFields($Model, $results, $primary);
-		//debug($results);
 		return $results;
 	}
 
@@ -204,13 +203,22 @@ class FieldUploadBehavior extends ModelBehavior {
 	public function refreshFieldUpload(Model $Model, $id, $field, $size = '') {
 		$filepath = $this->getFieldUploadImage($Model, $id, $field, $size);
 		if (!empty($filepath)) {
-			debug(compact('id', 'filepath'));
 			if (is_file($filepath)) {
-				debug($filepath);
 				return $this->uploadField($Model, $id, $field, $filepath);
 			}
 		}
 		return null;
+	}
+
+/**
+ * Forcibly updates and overwrites a model and field's default image
+ *
+ * @param Model $Model The associated Model object
+ * @param string $field The field of the image in the model
+ * @return 
+ **/
+	public function refreshFieldUploadDefaultImage(Model $Model, $field) {
+		return $this->_updateDefaultImage($Model, $field);
 	}
 
 	protected function _setWebRoot($root) {
@@ -458,8 +466,7 @@ class FieldUploadBehavior extends ModelBehavior {
 		}
 
 		// Replaces constants within the directory
-		$replace = ['{DS}' => DS,];
-		$config['dir'] = str_replace(array_keys($replace), $replace, $config['dir']);
+		$config['dir'] = $this->_dsReplace($config['dir']);
 
 		// Configures sizes
 		$sizes = [];
@@ -565,26 +572,34 @@ class FieldUploadBehavior extends ModelBehavior {
 /**
  * Takes a default image in the config and makes sure it exists for all sizes of the image
  *
+ * @param Model $Model The associated model
+ * @param string $field The field of the image in the model
+ * @return bool True on success, false on failure
  **/
 	private function _updateDefaultImage(Model $Model, $field) {
 		$config = $this->fields[$Model->alias][$field];
 		if (!empty($config['default'])) {
 			$dirs = $this->_getFieldSizeDirs($Model, $field);
-			$defaultImagePath = $this->_webroot . $config['default'];
-			if (DS == '\\') {
-				$defaultImagePath = str_replace('\\', '/', $defaultImagePath);
-			}
+			$defaultImagePath = $this->_webroot . $this->_dsReplace($config['default'], '/');
+
 			$data = array('name' => $defaultImagePath, 'tmp_name' => $defaultImagePath);
 			$config['filename'] = 'default.jpg';
 			unset($config['randomPath']);
-			return Upload::copy($data, $dirs, $config);
+
+			if (!Upload::copy($data, $dirs, $config)) {
+				throw new Exception('Could not create new default image: ' . $defaultImagePath);
+				return false;
+			}
 		}
-		return null;
+		return true;
 	}
 
 /**
  * Returns the base upload directory for a Model's field
  *
+ * @param Model $Model The associated model
+ * @param string $field The field of the image in the model
+ * @return string The base upload directory
  **/
 	private function _getFieldDir(Model $Model, $field) {
 		return Folder::addPathElement($this->fields[$Model->alias][$field]['root'], $this->fields[$Model->alias][$field]['dir']);
@@ -605,5 +620,17 @@ class FieldUploadBehavior extends ModelBehavior {
 				unset($this->{$queue}[$Model->alias]['']);
 			}
 		}
+	}
+
+
+/**
+ * Replaces Directory Separator constant placeholder with actual constant
+ *
+ * @param string $path The user-defined path element with {DS} as the directory separator
+ * @param string $ds The new directory separator to use
+ * @return string The newly-formed path
+ **/
+	private function _dsReplace($path, $ds = DS) {
+		return str_replace('{DS}', $ds, $path);
 	}
 }

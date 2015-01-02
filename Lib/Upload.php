@@ -317,20 +317,24 @@ class Upload {
  * Deletes any empty subfolders within an upload directory
  * 
  * @param string $dir The path to the upload directory
+ * @param bool $isRoot Makes sure the recursive calls remembers if the current iteration is the root folder or not
  * @return bool True on success. False on failure
  * @access public
  **/
-	public static function removeEmptySubFolders($dir) {
+	public static function removeEmptySubFolders($dir, $isRoot = true) {
 		$empty = true;
 		$files = glob(Folder::slashTerm($dir) . '*');
 		foreach ($files as $file) {
 			if (is_dir($file)) {
-				$empty = self::removeEmptySubFolders($file);
+				$empty = self::removeEmptySubFolders($file, false);
 			} else {
 				$empty = false;
 			}
 		}
-		return $empty && rmdir($dir);
+		if ($empty && !$isRoot && is_dir($dir)) {
+			rmdir($dir);
+		}
+		return $empty;
 	}
 
 	protected static function _isUploadedFile($data){
