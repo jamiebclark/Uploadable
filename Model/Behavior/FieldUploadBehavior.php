@@ -522,27 +522,29 @@ class FieldUploadBehavior extends ModelBehavior {
 		$root = Folder::slashTerm($this->_getFieldDir($Model, $field));
 		$webroot = $this->_webroot;
 
-		foreach ($config['sizes'] as $size => $sizeConfig):
-			$path = $src = $width = $height = $mime = $filesize = $modified = null;
-			$info = array();
-			if (!empty($value)) {
-				$path = Folder::addPathElement($root, $size);
-				$path = Folder::slashTerm($path) . $value;
-				$info = $this->_getImageInfo($path);
-			}
-
-			// Checks for default images if path is not found
-			if (empty($info['path']) && !empty($config['default'])) {
-				$path = Folder::addPathElement($root, $size);
-				$path = Folder::slashTerm($path) . 'default.jpg';
-				$info = $this->_getImageInfo($path);
-				if (empty($info['path'])) {
-					$this->_updateDefaultImage($Model, $field);
+		if (!empty($config['sizes']) && is_array($config['sizes'])):
+			foreach ($config['sizes'] as $size => $sizeConfig):
+				$path = $src = $width = $height = $mime = $filesize = $modified = null;
+				$info = array();
+				if (!empty($value)) {
+					$path = Folder::addPathElement($root, $size);
+					$path = Folder::slashTerm($path) . $value;
 					$info = $this->_getImageInfo($path);
 				}
-			}
-			$result['sizes'][$size] = $info; 
-		endforeach;
+
+				// Checks for default images if path is not found
+				if (empty($info['path']) && !empty($config['default'])) {
+					$path = Folder::addPathElement($root, $size);
+					$path = Folder::slashTerm($path) . 'default.jpg';
+					$info = $this->_getImageInfo($path);
+					if (empty($info['path'])) {
+						$this->_updateDefaultImage($Model, $field);
+						$info = $this->_getImageInfo($path);
+					}
+				}
+				$result['sizes'][$size] = $info; 
+			endforeach;
+		endif;
 		return $result;
 	}
 
