@@ -61,10 +61,10 @@ class Upload {
 		$filename = self::_dsFixFile($filename);
 
 		if (!is_array($dst)) {
-			$dst = [$dst];
+			$dst = array($dst);
 		}
 
-		$results = [];
+		$results = array();
 		foreach ($dst as $dir => $conversionRules) {
 			if (is_int($dir)) {
 				$dir = $conversionRules;
@@ -127,25 +127,25 @@ class Upload {
 			if (!$success) {
 				EasyLog::error("Could not upload file $dstFilename to directory $dir");
 			} else {
-				$result += [
+				$result += array(
 					'filename' => $dstFilename,
 					'size' => $TmpFile->size(),
 					'type' => !empty($data['type']) ? $data['type'] : null,
 					'ext' => $ext,
 					'location' => $dst,
-				];
+				);
 				@chmod($dst, 0777);
 			}
 
 			$results[] = $result;
 		}
 
-		$return = compact('results') + [
-			'log' => [
+		$return = compact('results') + array(
+			'log' => array(
 				'msgs' => EasyLog::getLog(),
 				'errors' => EasyLog::getErrors()
-			]
-		];
+			)
+		);
 		EasyLog::log("Finished Upload copy");
 		return $return;
 	}
@@ -196,7 +196,7 @@ class Upload {
  * @return bool True on success, false on failure
  * @access public
  **/
-	public static function copyImage($src, $dst, $rules = []) {
+	public static function copyImage($src, $dst, $rules = array()) {
 		EasyLog::log("Copying image from $src to $dst");
 		$Src = new File($src);
 

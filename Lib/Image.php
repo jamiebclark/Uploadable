@@ -3,6 +3,8 @@
 	Created 1/31/2011
 	Functions used for extending the basic PHP image functions
 */
+set_time_limit(7200);
+
 class Image {
 
 /**
