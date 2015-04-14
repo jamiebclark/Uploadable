@@ -32,6 +32,8 @@ class Image {
 		} else if (in_array($type, array('gif', 'image/gif'))) {
 			return imagegif($resource, $filename);
 		} else {
+			$bgColor = imagecolorallocate($resource, 255,255,255);
+			$resource = self::replaceTransparency($resource, $bgColor);
 			return imagejpeg($resource, $filename, $quality);
 		}
 	}
@@ -61,8 +63,9 @@ class Image {
 			break;
 			case 'image/png':
 				$img = imagecreatefrompng($filename);
-				$bg = imagecolorallocate($img, 255,255,255);
-				imagecolortransparent($img, $bg);
+				// $bgColor = imagecolorallocate($pngImg, 255,255,255);
+				/*
+				imagecolortransparent($pngImg, $bgColor);
 				
 				// turning off alpha blending (to ensure alpha channel information 
 				// is preserved, rather than removed (blending with the rest of the 
@@ -72,6 +75,14 @@ class Image {
 				// turning on alpha channel information saving (to ensure the full range 
 				// of transparency is preserved)
 				imagesavealpha($img, true);
+				*/
+
+				/*
+				list($width, $height) = getimagesize($filename);
+				$img = imagecreatetruecolor($width, $height);
+				imagefilledrectangle($img, 0, 0, $width, $height, $bgColor);
+				imagecopy($img, $pngImg, 0, 0, 0, 0, $width, $height);
+				*/
 			break;
 			case 'image/bmp':
 				$img = $self->createFromBmp($filename);
@@ -84,7 +95,29 @@ class Image {
 
 		return $img;
 	}
-	
+
+/**
+ * Replaces the transparent background of an image with a solid color
+ *
+ * @param resource $image The image resource
+ * @param array|int $color The color to use for the background
+ * @return resource The newly formatted resource;
+ **/
+	public static function replaceTransparency($image, $color) {
+		$w = imagesx($image);
+		$h = imagesy($image);
+		$output = imagecreatetruecolor($w, $h);
+
+		if (is_array($color)) {
+			list($r, $g, $b) = $color;
+			$color = imagecolorallocate($output, $r, $g, $b);
+		}
+		
+		imagefilledrectangle($output, 0, 0, $w, $h, $color);
+		imagecopy($output, $image, 0, 0, 0, 0, $w, $h);
+		return $output;
+	}
+
 	public static function fileNameExtension($fileName) {
 		$fileName = explode('.', $fileName);
 		if (count($fileName) == 1) {

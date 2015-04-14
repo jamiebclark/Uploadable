@@ -201,6 +201,9 @@ class Upload {
 		$Src = new File($src);
 
 		$img = Image::createFromFile($src);
+		// Since we're converting to JPG, remove the transparency color
+		$img = Image::replaceTransparency($img, array(255,255,255));
+
 		if (!$img) {
 			EasyLog::error("Could not create image resource from $src.");
 			if (!is_file($src)) {
