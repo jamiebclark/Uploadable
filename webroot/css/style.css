@@ -1,6 +1,10 @@
 .uploadable-image {
 	max-width: 100%;
 }
+.uploadable-image.text-center {
+	display: block;
+	margin: 0 auto;
+}
 
 .uploadable-thumbnail.pull-left, .uploadable-thumbnail.pull-right,
 .uploadable-image.pull-left, .uploadable-image.pull-right {

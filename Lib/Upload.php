@@ -201,8 +201,6 @@ class Upload {
 		$Src = new File($src);
 
 		$img = Image::createFromFile($src);
-		// Since we're converting to JPG, remove the transparency color
-		$img = Image::replaceTransparency($img, array(255,255,255));
 
 		if (!$img) {
 			EasyLog::error("Could not create image resource from $src.");
@@ -211,6 +209,9 @@ class Upload {
 			}
 			return false;
 		}
+
+		// Since we're converting to JPG, remove the transparency color
+		$img = Image::replaceTransparency($img, array(255,255,255));
 		
 		$ext = $Src->ext();
 		if (!empty($rules['convert'])) {
@@ -234,7 +235,7 @@ class Upload {
 			EasyLog::error('Image conversion failed');
 			return false;
 		}
-
+	
 		$dstParts = explode(DS, $dst);
 		$dstName = array_pop($dstParts);
 		$dstDir = Folder::slashTerm(implode(DS, $dstParts));

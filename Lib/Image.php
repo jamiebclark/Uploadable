@@ -40,7 +40,6 @@ class Image {
 	
 	public static function createFromFile($filename) {
 		ini_set("memory_limit", "256M");
-		$self =& Image::getInstance();
 
 	//Generates an image resource based on a variety of image types
 		if (!is_file($filename)) {
@@ -85,7 +84,7 @@ class Image {
 				*/
 			break;
 			case 'image/bmp':
-				$img = $self->createFromBmp($filename);
+				$img = self::createFromBmp($filename);
 			break;
 		}
 
@@ -135,12 +134,11 @@ class Image {
 	}
 	
 	public static function fileExtension($file) {
-		$self =& Image::getInstance();
 		if (!is_file($file)) {
 			return false;
 		}
 		$size = getimagesize($file);
-		return $self->mimeExtension($size['mime']);
+		return self::mimeExtension($size['mime']);
 	}
 	
 	public static function mimeExtension($mime) {
@@ -243,32 +241,35 @@ class Image {
 		return $res;
 	}
 
-	/**
-	 * Forces an image to a new set of dimensions
-	 * @param resource $img PHP Image Resource
-	 * @param int $nw New width
-	 * @param int $nh New height
-	 * @param boolean $soft If soft is on, it will fit the image so part of the image is cut, leaving blank background showing in places
-	 *
-	 **/
+/**
+ * Forces an image to a new set of dimensions
+ *
+ * @param resource $img PHP Image Resource
+ * @param int $nw New width
+ * @param int $nh New height
+ * @param boolean $soft If soft is on, it will fit the image so part of the image is cut, leaving blank background showing in places
+ * @return resource;
+ **/
 	public static function constrainCrop($img, $nw, $nh, $soft = false) {
-		$self =& Image::getInstance();
 		$ow = imagesx($img);
 		$oh = imagesy($img);
+		$x = 0;
+		$y = 0;
 		
-		//Original Ratio
+		// Original Ratio
 		$r = $ow / $oh;
 		
-		//New Ratio
+		// New Ratio
 		$nr = $nw / $nh;
 		
 		$img2 = imagecreatetruecolor($nw, $nh);
 		
-		//debug("Ratio: $ow / $oh = $r");
-		//debug("New Ratio: $nw / $nh = $nr");
 		$heightCheck = $nw / $r >= $nh;
-		if (($heightCheck && !$soft) || (!$heightCheck && $soft)) {
-			//Fit width, crop the height
+		if ($nh == $oh && $nw == $ow) {
+			$h = $nh;
+			$w = $nw;
+		} else if (($heightCheck && !$soft) || (!$heightCheck && $soft)) {
+			// Fit width, crop the height
 			$w = $ow;
 			$h = ceil($w / $nr);
 			$x = 0;
@@ -279,20 +280,20 @@ class Image {
 			$s1 = array(array(0,0), array($nw, $buffer));
 			$s2 = array(array(0, $nh - $buffer), array($nw, $nh));
 		} else {
-			//Fit height, crop the width
+			// Fit height, crop the width
 			$h = $oh;
 			$w = floor($h * $nr);
 			$x = floor($ow /2 - $w / 2);	//Rounds so not to leave a blank column of pixels on the edge
 			$y = 0;
 			
-			//Finds the new adjusted width
+			// Finds the new adjusted width
 			$aw = $nh * $r;
 			$buffer = ($nw - $aw) / 2;
 			$s1 = array(array(0,0),array($buffer, $nh));
 			$s2 = array(array($nw - $buffer,0), array($nw, $nh));
-
 		}
-		$self->copyResampled($img2, $img, 0, 0, $x, $y, $nw, $nh, $w, $h); 
+		self::copyResampled($img2, $img, 0, 0, $x, $y, $nw, $nh, $w, $h); 
+		
 		$bg = imagecolorallocate($img2, 255, 255, 255);
 		if (0) {
 			debug($s1);
@@ -308,8 +309,7 @@ class Image {
 	}
 
 	public static function copyFileScaledCss($filename, $srcScale=1, $top=0, $left=0, $dstW=null, $dstH=null, $bgColor=null) {
-		$self =& Image::getInstance();
-		return $self->copyFileScaled($filename, $srcScale, $top * -1, $left * -1, $dstW, $dstH, $bgColor);
+		return self::copyFileScaled($filename, $srcScale, $top * -1, $left * -1, $dstW, $dstH, $bgColor);
 	}
 
 	public static function copyFileScaled($filename, $srcScale=1, $srcX=0, $srcY=0, $dstW=null, $dstH=null, $bgColor=null) {
@@ -319,7 +319,6 @@ class Image {
 		if (!is_file($filename)) {
 			return false;
 		}
-		$self =& Image::getInstance();
 
 		list($fileW, $fileH) = getimagesize($filename);
 		if (empty($dstW)) {
@@ -334,7 +333,7 @@ class Image {
 			list($r,$g,$b) = $bgColor;
 			$bgColor = imagecolorallocate($imgDst, $r, $g, $b);
 		} else if (is_string($bgColor)) {
-			$bgColor = $self->colorAllocateStr($imgDst, $bgColor);
+			$bgColor = self::colorAllocateStr($imgDst, $bgColor);
 		} else if (empty($bgColor)) {
 			$bgColor = imagecolorallocate($imgDst,0xF8,0xF8,0xF8);
 		}
@@ -358,7 +357,7 @@ class Image {
 		$srcXConvert = $srcX / $srcScale;
 		$srcYConvert = $srcY / $srcScale;
 		//debug(array($filename, 0, 0, $srcXConvert, $srcYConvert, $dstW, $dstH, $srcW, $srcH));
-		$self->copyResampled($imgDst, $imgSrc, 0, 0, $srcXConvert, $srcYConvert, $dstW, $dstH, $srcW, $srcH);
+		self::copyResampled($imgDst, $imgSrc, 0, 0, $srcXConvert, $srcYConvert, $dstW, $dstH, $srcW, $srcH);
 		//imagecopyresampled($imgDst, $imgSrc, 0, 0, $srcXConvert, $srcYConvert, $dstW, $dstH, $srcW, $srcH);
 		
 		//Find Blank Spots
@@ -393,8 +392,6 @@ class Image {
 	 * @return PHP image resource
 	 */
 	public static function constrain($img, $maxW = null, $maxH = null) {
-		$self =& Image::getInstance();
-		
 		if (empty($maxW) && empty($maxH)) {
 			return $img;
 		}
@@ -425,7 +422,7 @@ class Image {
 		if (!($img2 = imagecreatetruecolor($w,$h))) {
 			print "COULD NOT CREATE IMAGE WITH DIMENSIONS: $w, $h<br/>";
 		}
-		$self->copyResampled($img2,$img,0,0,0,0,$w,$h,$ow,$oh);
+		self::copyResampled($img2,$img,0,0,0,0,$w,$h,$ow,$oh);
 		return $img2;
 	}
 
@@ -477,8 +474,7 @@ class Image {
 	 * @param string $color_hex_str : hexadecimal color value
 	 */
 	public static function colorAllocateStr($img, $color_hex_str) {
-		$self =& Image::getInstance();
-		if(($colors = $self->hex2Rgb($color_hex_str)) === FALSE) {
+		if(($colors = self::hex2Rgb($color_hex_str)) === FALSE) {
 			return false;
 		}
 		return imagecolorallocate($img, $colors['red'], $colors['green'], $colors['blue']);
