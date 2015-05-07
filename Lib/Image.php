@@ -90,7 +90,7 @@ class Image {
 
 		//$transparentColor = imagecolorallocate($img, 255, 0, 0);
 		//imagecolortransparent($img, $transparentColor);
-		//imagefilledrectangle($img2, 0, 0, $nw, $nh, $transparentColor);
+		//imagefilledrectangle($img2, 0, 0, $newWidth, $newHeight, $transparentColor);
 
 		return $img;
 	}
@@ -245,55 +245,59 @@ class Image {
  * Forces an image to a new set of dimensions
  *
  * @param resource $img PHP Image Resource
- * @param int $nw New width
- * @param int $nh New height
+ * @param int $newWidth New width
+ * @param int $newHeight New height
  * @param boolean $soft If soft is on, it will fit the image so part of the image is cut, leaving blank background showing in places
  * @return resource;
  **/
-	public static function constrainCrop($img, $nw, $nh, $soft = false) {
-		$ow = imagesx($img);
-		$oh = imagesy($img);
+	public static function constrainCrop($img, $newWidth, $newHeight, $soft = false) {
+		$oWidth = imagesx($img);
+		$oHeight = imagesy($img);
 		$x = 0;
 		$y = 0;
 		
 		// Original Ratio
-		$r = $ow / $oh;
+		$ratio = $oWidth / $oHeight;
 		
 		// New Ratio
-		$nr = $nw / $nh;
+		$newRatio = $newWidth / $newHeight;
 		
-		$img2 = imagecreatetruecolor($nw, $nh);
+		$img2 = imagecreatetruecolor($newWidth, $newHeight);
 		
-		$heightCheck = $nw / $r >= $nh;
-		if ($nh == $oh && $nw == $ow) {
-			$h = $nh;
-			$w = $nw;
+		$heightCheck = $newWidth / $ratio >= $newHeight;
+		if ($newHeight == $oHeight && $newWidth == $oWidth) {
+			$h = $newHeight;
+			$w = $newWidth;
+			$s1 = array(array(0,0), array($w, 0));
+			$s2 = array(array(0,$h), array($w, $h));
 		} else if (($heightCheck && !$soft) || (!$heightCheck && $soft)) {
 			// Fit width, crop the height
-			$w = $ow;
-			$h = ceil($w / $nr);
+			$w = $oWidth;
+			$h = ceil($w / $newRatio);
 			$x = 0;
-			$y = floor($oh / 2 - $h / 2); //Rounds so not to leave a blank row of pixels on the edge
+			$y = floor($oHeight / 2 - $h / 2); //Rounds so not to leave a blank row of pixels on the edge
+
 			//Finds new adjusted height
-			$ah = $nw / $r;
-			$buffer = ($nh - $ah) / 2;
-			$s1 = array(array(0,0), array($nw, $buffer));
-			$s2 = array(array(0, $nh - $buffer), array($nw, $nh));
+			$adjustedHeight = $newWidth / $ratio;
+			$buffer = ($newHeight - $adjustedHeight) / 2;
+			$s1 = array(array(0,0), array($newWidth, $buffer));
+			$s2 = array(array(0, $newHeight - $buffer), array($newWidth, $newHeight));
 		} else {
 			// Fit height, crop the width
-			$h = $oh;
-			$w = floor($h * $nr);
-			$x = floor($ow /2 - $w / 2);	//Rounds so not to leave a blank column of pixels on the edge
+			$h = $oHeight;
+			$w = floor($h * $newRatio);
+			$x = floor($oWidth /2 - $w / 2);	//Rounds so not to leave a blank column of pixels on the edge
 			$y = 0;
 			
 			// Finds the new adjusted width
-			$aw = $nh * $r;
-			$buffer = ($nw - $aw) / 2;
-			$s1 = array(array(0,0),array($buffer, $nh));
-			$s2 = array(array($nw - $buffer,0), array($nw, $nh));
+			$adjustedWidth = $newHeight * $ratio;
+			$buffer = ($newWidth - $adjustedWidth) / 2;
+			$s1 = array(array(0,0),array($buffer, $newHeight));
+			$s2 = array(array($newWidth - $buffer,0), array($newWidth, $newHeight));
 		}
-		self::copyResampled($img2, $img, 0, 0, $x, $y, $nw, $nh, $w, $h); 
-		
+
+		self::copyResampled($img2, $img, 0, 0, $x, $y, $newWidth, $newHeight, $w, $h); 
+
 		$bg = imagecolorallocate($img2, 255, 255, 255);
 		if (0) {
 			debug($s1);
@@ -397,11 +401,11 @@ class Image {
 		}
 		
 		//Check for valid image resource
-		if (($ow = @imagesx($img)) === false) {
+		if (($oWidth = @imagesx($img)) === false) {
 			return false;
 		}
-		$oh = imagesy($img);
-		list($w,$h) = array($ow,$oh);
+		$oHeight = imagesy($img);
+		list($w,$h) = array($oWidth,$oHeight);
 		
 		if ($w == 0 || $h == 0) {
 			return false;
@@ -422,7 +426,7 @@ class Image {
 		if (!($img2 = imagecreatetruecolor($w,$h))) {
 			print "COULD NOT CREATE IMAGE WITH DIMENSIONS: $w, $h<br/>";
 		}
-		self::copyResampled($img2,$img,0,0,0,0,$w,$h,$ow,$oh);
+		self::copyResampled($img2,$img,0,0,0,0,$w,$h,$oWidth,$oHeight);
 		return $img2;
 	}
 
