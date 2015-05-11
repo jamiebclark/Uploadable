@@ -265,6 +265,8 @@ class Image {
 		$img2 = imagecreatetruecolor($newWidth, $newHeight);
 		
 		$heightCheck = $newWidth / $ratio >= $newHeight;
+		
+		// New Dimensions match the existing dimensions
 		if ($newHeight == $oHeight && $newWidth == $oWidth) {
 			$h = $newHeight;
 			$w = $newWidth;
