@@ -69,7 +69,8 @@ class FieldUploadImageHelper extends AppHelper {
 
 		if (!empty($data)) {
 			if ($img = $this->image($data, $field, $size, [
-					'style' => 'max-width: 100%'
+					'style' => 'max-width: 100%',
+					'modified' => true,
 				])) {
 				$out .= $img;
 				$out .= $this->Form->input("$dataName.$field.delete", [
@@ -115,7 +116,6 @@ class FieldUploadImageHelper extends AppHelper {
 		if (!empty($attrs['modified']) && !empty($options['modified'])) {
 			$src .= '?m=' . $attrs['modified'];
 		}
-
 
 		$url = $urlOptions = false;
 		if (!empty($options['url'])) {
