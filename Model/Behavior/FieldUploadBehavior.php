@@ -16,12 +16,19 @@ class FieldUploadBehavior extends ModelBehavior {
 	protected $_uploadQueue = [];
 	// Created in beforeSave and executed in afterSave
 	protected $_deleteQueue = [];
+	// A list of files to be deleted before the object unloads
+	protected $_unlinkQueue = [];
 
 	// The webroot
 	protected $_webroot = WWW_ROOT;
 	protected $_urlBase = null;
 
 	private $_deleteId;
+
+	public function __destructor() {
+		$this->_startUnlinkQueue();
+		return parent::__destructor();
+	}
 
 	public function setup(Model $Model, $settings =[]) {
 		App::uses('PluginConfig', 'Uploadable.Lib');
@@ -158,7 +165,6 @@ class FieldUploadBehavior extends ModelBehavior {
  **/
 	public function uploadField(Model $Model, $id, $field, $filepath) {
 		return $this->_uploadField($Model, $id, $field, [
-
 			'tmp_name' => $filepath,
 			'name' => $id . '.jpg'
 		]);
@@ -344,6 +350,24 @@ class FieldUploadBehavior extends ModelBehavior {
 		return null;
 	}
 
+	private function _addUnlinkQueue($filename) {
+		if (is_array($filename)) {
+			foreach ($filename as $subFilename) {
+				$this->_addUnlinkQueue($subFilename);
+			}
+		} else {
+			$this->_unlinkQueue[$filename] = $filename;
+		}
+	}
+
+	private function _startUnlinkQueue() {
+		foreach ($this->_unlinkQueue as $filename) {
+			if (is_file($filename)) {
+				unlink($filename);
+			}
+		}
+	}
+
 /**
  * Copies uploaded field data to a permanent folder
  *
@@ -373,6 +397,86 @@ class FieldUploadBehavior extends ModelBehavior {
 
 		$File = new File($data['name']);
 		$ext = $File->ext();
+
+		if ($ext == 'pdf') {
+			$uniqId = md5(uniqid(time(), true));
+
+			$convertExt = 'jpg';
+			$convertDir = TMP . 'convert_pdf_to_jpg' . DS;
+			if (!is_dir($convertDir)) {
+				mkdir($convertDir);
+			}
+			$srcName = $uniqId . '-from';
+			$dstName = $uniqId . '-to';
+
+			$src = $convertDir . $srcName . '.' . $ext;
+			$dst = $convertDir . $dstName . '.' . $convertExt;
+
+			if (is_file($src)) {
+				unlink($src);	
+			}
+			if (is_file($dst)) {
+				unlink($dst);
+			}
+			
+			if (!move_uploaded_file($data['tmp_name'], $src)) {
+				if (!copy($data['tmp_name'], $src)) {
+					throw new Exception("Could not move temp file to $src");
+				}
+			}
+
+			//copy($data['tmp_name'], $src);
+
+			try {
+				$im = new Imagick();
+				$im->setResolution(200,200);
+
+				$im->readImage($src);
+				$im->setImageFormat('jpeg');
+				$im->writeImages($dst, true);
+
+			} catch (Exception $e) {
+				debug($e->getMessage());
+			}
+
+			ini_set('memory_limit', '1G');
+
+			if (!is_file($dst)) {
+				$images = array();
+				$imageH = 0;
+				$imageW = 0;
+				for ($i = 0; $i < 25; $i++) {
+					$filename = $convertDir . $dstName . '-' . $i . '.' . $convertExt;
+					if (!is_file($filename)) {
+						break;
+					}
+					$img = imagecreatefromjpeg($filename);
+					$w = imagesx($img);
+					$h = imagesy($img);
+					if ($w > $imageW) {
+						$imageW = $w;
+					}
+					$imageH += $h;
+					$images[] = compact('img', 'w', 'h', 'filename');
+				}
+				try {
+					$img = imagecreatetruecolor($imageW, $imageH);
+				} catch (Exception $e) {
+					throw new Exception("Could not create destination file: " . $e->getMessage());
+				}
+				$pointerX = 0;
+				$pointerY = 0;
+				foreach ($images as $image) {
+					imagecopyresampled($img, $image['img'], $pointerX, $pointerY, 0, 0, $image['w'], $image['h'], $image['w'], $image['h']);
+					unlink($image['filename']);
+					$pointerY += $image['h'];
+				}
+				imagejpeg($img, $dst, 100);
+			}
+			$data['tmp_name'] = $dst;
+			$ext = $convertExt;
+			$this->_addUnlinkQueue(array($src, $dst));
+		}
 
 		$config['filename'] = $id . '.' . $ext;
 		if (!empty($config['randomPath'])) {

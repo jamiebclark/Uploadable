@@ -39,7 +39,7 @@ class Image {
 	}
 	
 	public static function createFromFile($filename) {
-		ini_set("memory_limit", "256M");
+		ini_set("memory_limit", "1G");
 
 	//Generates an image resource based on a variety of image types
 		if (!is_file($filename)) {
