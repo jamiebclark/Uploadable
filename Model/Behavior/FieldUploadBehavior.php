@@ -132,7 +132,7 @@ class FieldUploadBehavior extends ModelBehavior {
 		}
 		$this->_startUploadQueue($Model, $id);	// Uploads anything found in beforeSave
 		$this->_startDeleteQueue($Model, $id);	// Deletes anything marked for deletion
-
+		$this->_startUnlinkQueue();
 
 		return parent::afterSave($Model, $created, $options);
 	}
@@ -361,10 +361,11 @@ class FieldUploadBehavior extends ModelBehavior {
 	}
 
 	private function _startUnlinkQueue() {
-		foreach ($this->_unlinkQueue as $filename) {
+		foreach ($this->_unlinkQueue as $k => $filename) {
 			if (is_file($filename)) {
 				unlink($filename);
 			}
+			unset($this->_unlinkQueue[$k]);
 		}
 	}
 
