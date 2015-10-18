@@ -725,11 +725,12 @@ class UploadableBehavior extends ModelBehavior {
 		$dir = $this->_folderSlashCheck($dir);
 		$isEmpty = true;
 		//Cycles through all files and folders in directory
-		$success = $this->_dirFilesFunction($dir, function($file) use ($dir, &$isEmpty) {
+		$_this = $this;
+		$success = $this->_dirFilesFunction($dir, function($file) use ($dir, &$isEmpty, $_this) {
 			$subDir = $dir . $file;
 			if (is_dir($subDir)) {
 				//Checks sub-directory
-				if (!$this->_deleteEmptyDirectories($subDir)) {
+				if (!$_this->_deleteEmptyDirectories($subDir)) {
 					$isEmpty = false;
 				}
 			} else {
