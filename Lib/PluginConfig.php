@@ -111,5 +111,4 @@ class PluginConfig {
 
 		return null;
 	}
-
 }
