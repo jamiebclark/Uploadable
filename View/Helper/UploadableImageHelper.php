@@ -95,9 +95,19 @@ class UploadableImageHelper extends AppHelper {
 		if (is_string($options)) {
 			$options = $this->parseOptions($options);
 		}
+		$default = [
+			'size' => null,
+			'url' => null,
+			'media' => null,
+			'align' => null,
+			'caption' => null,
+			'width' => null,
+			'height' => null,
+		];
 		if (is_array($defaultOptions)) {
-			$options = array_merge($defaultOptions, $options);
+			$default = array_merge($default, $defaultOptions);
 		}
+		$options = array_merge($default, $options);
 
 		if (!empty($options['size'])) {
 			$size = $options['size'];
@@ -243,12 +253,18 @@ class UploadableImageHelper extends AppHelper {
  * @param Array $data Returned information
  * @param string $field The table field with file informaiton store
  * @param string|null $size The specific size of the image source
+ * @param bool $mtime Whether to include the modified time at the end to prevent caching conflicts
  * @return string|null Src path to image if found, null if not
  **/
-	private function getDataFieldSrc($data, $field, $size = null) {
+	private function getDataFieldSrc($data, $field, $size = null, $mtime = true) {
 		$dataFieldSize = $this->getDataFieldSize($data, $field, $size);
 		if (!empty($dataFieldSize['src'])) {
-			return $dataFieldSize['src'];
+			$src = $dataFieldSize['src'];
+			if ($mtime) {
+				$connect = strpos($src, '?') === false ? '?' : '&';
+				$src .= $connect . 'm=' . filemtime($dataFieldSize['path']);
+			}
+			return $src;
 		} else {
 			return null;
 		}
