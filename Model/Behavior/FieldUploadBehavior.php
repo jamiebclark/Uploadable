@@ -133,7 +133,6 @@ class FieldUploadBehavior extends ModelBehavior {
 		$this->_startUploadQueue($Model, $id);	// Uploads anything found in beforeSave
 		$this->_startDeleteQueue($Model, $id);	// Deletes anything marked for deletion
 		$this->_startUnlinkQueue();
-
 		return parent::afterSave($Model, $created, $options);
 	}
 
@@ -150,7 +149,6 @@ class FieldUploadBehavior extends ModelBehavior {
 			$this->_startDeleteQueue($Model, $this->_deleteId);
 			unset($this->_deleteId);
 		}
-
 		return parent::afterDelete($Model);
 	}
 
@@ -516,11 +514,17 @@ class FieldUploadBehavior extends ModelBehavior {
 					$dirs = $this->_getFieldSizeDirs($Model, $field);
 					foreach ($dirs as $dir => $config) {
 						$path = Folder::slashTerm($dir) . $val;
-						if (!is_file($path) || unlink($path)) {
-							$Model->updateAll(
-								[$Model->escapeField($field) => '""'], 
-								[$Model->escapeField($Model->primaryKey) => $id]
-							);
+						if (is_file($path)) {
+							try {
+								unlink($path);
+							} catch (Exception $e) {
+								throw new Exception ('Could not delete file: ' . $path);
+							}
+						}
+
+						$Model->create();
+						if (!$Model->save(['id' => $id, $field => ''], ['validate' => false, 'callbacks' => false])) {
+							throw new Exception("Could empty model field `$field` after deleting image");
 						}
 						Upload::removeEmptySubFolders($dir);
 					}
