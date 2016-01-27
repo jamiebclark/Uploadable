@@ -261,8 +261,10 @@ class UploadableImageHelper extends AppHelper {
 		if (!empty($dataFieldSize['src'])) {
 			$src = $dataFieldSize['src'];
 			if ($mtime) {
-				$connect = strpos($src, '?') === false ? '?' : '&';
-				$src .= $connect . 'm=' . filemtime($dataFieldSize['path']);
+				if ($time = @filemtime($dataFieldSize['path'])) {
+					$connect = strpos($src, '?') === false ? '?' : '&';
+					$src .= $connect . 'm=' . $time;
+				}
 			}
 			return $src;
 		} else {
