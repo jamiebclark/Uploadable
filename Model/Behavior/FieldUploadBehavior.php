@@ -123,6 +123,7 @@ class FieldUploadBehavior extends ModelBehavior {
 				unset($data[$field]);
 			}
 		endforeach;
+		return parent::beforeSave($Model, $options);
 	}
 
 	public function afterSave(Model $Model, $created, $options = []) {
