@@ -31,7 +31,7 @@ class EmbeddedImageHelper extends AppHelper {
 		ob_start();
 		?>
 		<div class="panel panel-default input-embedded-images">
-			<div class="panel-heading">Embedded Images</div>
+			<div class="panel-heading"><span class="panel-title">Embedded Images</span></div>
 			<div class="panel-body">
 				<p class="help-block">
 					To add an image to the copy of your document, first add it to this section. 
