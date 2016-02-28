@@ -675,6 +675,7 @@ class FieldUploadBehavior extends ModelBehavior {
 			if (!empty($this->_urlBase)) {
 				$src = $this->_urlBase . $src;
 			}
+			$src = Router::url($src, true);
 		}
 		if (is_file($path)) {
 			$info = getimagesize($path);
