@@ -193,6 +193,7 @@ class Upload {
  *		- `max` - Resize an image if it's boundaries exceed this value
  *		- `set` - Force an image to fit dimensions. Sizes until it fits, the crops off anything hanging off the sides
  *		- `setSoft` - Force an image to fit dimensions. Sizes until it all fits. If dimensions don't match, background will show
+ * 		- `copyResized`
  * @return bool True on success, false on failure
  * @access public
  **/
@@ -229,6 +230,16 @@ class Upload {
 		if (!empty($rules['setSoft'])) {
 			//Force an image to fit dimensions. Sizes until it all fits. If dimensions don't match, background will show
 			$img = Image::constrainCrop($img, $rules['setSoft'][0], $rules['setSoft'][1], true);
+		}
+
+		if (!empty($rules['copyResized'])) {
+			$srcX = $rules['copyResized']['srcX'];
+			$srcY = $rules['copyResized']['srcY'];
+			$srcW = $rules['copyResized']['srcW'];
+			$srcH = $rules['copyResized']['srcH'];
+			$dstW = $rules['copyResized']['dstW'];
+			$dstH = $rules['copyResized']['dstH'];
+			$img = Image::cropPortion($img, $srcX, $srcY, $srcW, $srcH, $dstW, $dstH);
 		}
 		
 		if (!$img) {

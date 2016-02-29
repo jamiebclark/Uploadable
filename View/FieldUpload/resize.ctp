@@ -1,0 +1,1 @@
+<?php echo $this->element('Uplodable.field_upload_images/resize');

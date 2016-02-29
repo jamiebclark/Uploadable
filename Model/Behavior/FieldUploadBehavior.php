@@ -18,6 +18,8 @@ class FieldUploadBehavior extends ModelBehavior {
 	protected $_deleteQueue = [];
 	// A list of files to be deleted before the object unloads
 	protected $_unlinkQueue = [];
+	// A list of files to be copied and cropped
+	protected $_cropCopyQueue = [];
 
 	// The webroot
 	protected $_webroot = WWW_ROOT;
@@ -123,6 +125,14 @@ class FieldUploadBehavior extends ModelBehavior {
 				unset($data[$field]);
 			}
 		endforeach;
+
+		if (!empty($data['FieldUploadCropCopy'])) {
+			foreach ($data['FieldUploadCropCopy'] as $field => $attrs) {
+				$this->_addCropCopyQueue($Model, $id, $field, $attrs);
+			}
+			unset($data['FieldUploadCropCopy']);
+		}
+
 		return parent::beforeSave($Model, $options);
 	}
 
@@ -131,8 +141,9 @@ class FieldUploadBehavior extends ModelBehavior {
 		if ($created) {
 			$this->_updateQueueModelIdKeys($Model, $id);
 		}
-		$this->_startUploadQueue($Model, $id);	// Uploads anything found in beforeSave
-		$this->_startDeleteQueue($Model, $id);	// Deletes anything marked for deletion
+		$this->_startUploadQueue($Model, $id);		// Uploads anything found in beforeSave
+		$this->_startCropCopyQueue($Model, $id);	// Crops and copies anything set in beforeSave
+		$this->_startDeleteQueue($Model, $id);		// Deletes anything marked for deletion
 		$this->_startUnlinkQueue();
 		return parent::afterSave($Model, $created, $options);
 	}
@@ -249,6 +260,125 @@ class FieldUploadBehavior extends ModelBehavior {
 		return $this->_webroot;
 	}
 
+	public function getFieldUploadConfig(Model $Model, $field = null, $size = null) {
+		$config = $this->fields[$Model->alias];
+		if (!empty($field)) {
+			$config = $config[$field];
+			if (!empty($size)) {
+				$config = $config['sizes'][$size];
+			}
+		}
+		return $config;
+	}
+
+	public function getFieldUploadDimensions(Model $Model, $field, $size) {
+		$config = $this->getFieldUploadConfig($Model, $field, $size);
+		$sizeKeys = ['max', 'setSoft', 'set'];
+		foreach ($sizeKeys as $key) {
+			if (!empty($config[$key])) {
+				return $config[$key];
+			}
+		}
+		return null;
+	}
+
+	public function getFieldUploadFullSizeKey(Model $Model, $field) {
+		$config = $this->getFieldUploadConfig($Model, $field);
+		foreach (['', 'full'] as $key) {
+			if (array_key_exists($key, $config['sizes'])) {
+				return $key;
+			}
+		}
+		return null;
+	}
+
+/**
+ * Copies a cropped portion of one field's size onto another
+ *
+ * @param Model $Model The associated Model object
+ * @param int $id The model id
+ * @param string $field The that stores image path information
+ * @param string $dstSize The destination size of the field to copy information
+ * @param string $srcSize The source size of the field to find the source of the information
+ * @param int $srcX The source X position
+ * @param int $srcY The source Y position
+ * @param int $srcW The source width
+ * @param int $srcH The source height
+ * @return bool;
+ **/
+	public function cropCopyFieldUploadImageField(Model $Model, $id, $field, $dstSize, $srcSize, $srcX, $srcY, $srcW, $srcH) {
+		list($dstW, $dstH) = $this->getFieldUploadDimensions($Model, $field, $dstSize);
+		$dstPath = $this->getFieldUploadImage($Model, $id, $field, $dstSize);
+		$srcPath = $this->getFieldUploadImage($Model, $id, $field, $srcSize);
+
+		try {
+			Upload::copyImage($srcPath, $dstPath, [
+				'copyResized' => compact('srcX', 'srcY', 'srcW', 'srcH', 'dstW', 'dstH'),
+			]);
+		} catch (Exception $e) {
+			throw new Exception("Could not crop copy image: " . $e->getMessage());
+		}
+
+		//Saves Value
+		$vals = [];
+		foreach (compact('srcX', 'srcY', 'srcW', 'srcH') as $v) {
+			$vals[] = round($v, 2);
+		}
+		$this->setFieldUploadQueryVal($Model, $id, $field, [
+			$field => implode(',', $vals),
+		]);
+		return true;
+	}
+
+	public function getCropCopyFieldUploadSettings(Model $Model, $id, $field, $size, $data = []) {
+		$settings = [];
+		$settings['alias'] = $Model->alias;
+		$settings['field'] = $field;
+		$settings['size'] = $size;
+		$settings['dimensions'] = $this->getFieldUploadDimensions($Model, $field, $size);
+		list($path, $query) = $this->fieldUploadQuerySplit($Model, $id, $field);
+		$settings['full_size'] = $this->getFieldUploadFullSizeKey($Model, $field);
+
+		if (!empty($query[$field])) {
+			$vals = explode(',', $query[$field]);
+			foreach (['x', 'y', 'w', 'h'] as $k => $v) {
+				if (array_key_exists($k, $vals)) {
+					$settings[$v] = $vals[$k];
+				}
+			}
+		}
+		$data[$Model->alias]['FieldUploadCropCopy'][$field] = $settings;
+		return $data;
+	}
+
+	public function setFieldUploadQueryVal(Model $Model, $id, $field, $key, $value = null) {
+		list($path, $query) = $this->fieldUploadQuerySplit($Model, $id, $field);
+		if (is_array($key)) {
+			$query = $key + $query;
+		} else {
+			$query[$key] = $value;
+		}
+		$path .= '?' . http_build_query($query);
+	
+		$Model->create();
+		return $Model->save([
+			$Model->primaryKey => $id,
+			$field => $path,
+		], ['callbacks' => false]);
+	}
+
+	public function fieldUploadQuerySplit(Model $Model, $id, $field) {
+		$result = $Model->read($field, $id);
+		$path = $result[$Model->alias][$field];
+		$query = [];
+		if (($pos = strpos($path, '?')) !== false) {
+			$queryString = urldecode(substr($path, $pos + 1));
+			parse_str($queryString, $query);
+			$path = substr($path, 0, $pos);
+		}
+		return [$path, $query];
+	}
+
 	public function setUploadFieldSetting(Model $Model, $field, $varName, $value) {
 		if (empty($field)) {
 			foreach ($this->fields[$Model->alias] as $field => $config) {
@@ -275,7 +405,7 @@ class FieldUploadBehavior extends ModelBehavior {
 			throw new Exception (sprintf('Cannot find FieldUpload field "%s" for model %s', $field, $Model->alias));
 		}
 		if (!array_key_exists($size, $this->fields[$Model->alias][$field]['sizes'])) {
-			throw new Exception (sprintf('Model %s and field %s does not have a size set for: %s', $Model->alias, $field, $size));
+			throw new Exception (sprintf('Model %s and field %s does not have a size set for size key: "%s"', $Model->alias, $field, $size));
 		}
 		$result = $Model->find('first', array(
 			'fields' => array($Model->escapeField($field)),
@@ -302,7 +432,7 @@ class FieldUploadBehavior extends ModelBehavior {
  * @return void
  **/
 	private function _startUploadQueue(Model $Model, $id = null) {
-		if (!empty($id)) {
+		if (empty($id)) {
 			$id = $Model->id;
 		}
 		if (!empty($this->_uploadQueue[$Model->alias][$id])):
@@ -312,6 +442,26 @@ class FieldUploadBehavior extends ModelBehavior {
 			endforeach;
 			unset($this->_uploadQueue[$Model->alias][$id]);
 		endif;
+	}
+
+	private function _addCropCopyQueue(Model $Model, $id, $field, $attrs) {
+		$this->_cropCopyQueue[$Model->alias][$id][$field] = $attrs;
+	}
+
+	private function _startCropCopyQueue(Model $Model, $id) {
+		if (empty($id)) {
+			$id = $Model->id;
+		}
+		if (!empty($this->_cropCopyQueue[$Model->alias][$id])) {
+			foreach ($this->_cropCopyQueue[$Model->alias][$id] as $field => $attrs) {
+				$Model->cropCopyFieldUploadImageField($id, $field, 
+					$attrs['size'], $attrs['full_size'], 
+					$attrs['x'], $attrs['y'], 
+					$attrs['w'], $attrs['h']
+				);
+			}
+			unset($this->_cropCopyQueue[$Model->alias][$id]);
+		}
 	}
 
 /**
@@ -628,7 +778,7 @@ class FieldUploadBehavior extends ModelBehavior {
 
 		$config = $this->fields[$Model->alias][$field];
 
-		$result = [];
+		$result = ['isDefault' => false];
 		$root = Folder::slashTerm($this->_getFieldDir($Model, $field));
 		$webroot = $this->_webroot;
 
@@ -644,6 +794,7 @@ class FieldUploadBehavior extends ModelBehavior {
 
 				// Checks for default images if path is not found
 				if (empty($info['path']) && !empty($config['default'])) {
+					$result['isDefault'] = true;
 					$path = Folder::addPathElement($root, $size);
 					$path = Folder::slashTerm($path) . 'default.jpg';
 					$info = $this->_getImageInfo($path);
@@ -676,6 +827,10 @@ class FieldUploadBehavior extends ModelBehavior {
 				$src = $this->_urlBase . $src;
 			}
 		}
+
+		if (($queryCut = strpos($path, '?')) !== false) {
+			$path = substr($path, 0, $queryCut);
+		}
 		if (is_file($path)) {
 			$info = getimagesize($path);
 			list($width, $height) = $info;
@@ -685,7 +840,6 @@ class FieldUploadBehavior extends ModelBehavior {
 		} else {
 			$path = null;
 		}
-
 		return compact('path', 'src', 'width', 'height', 'mime', 'filesize', 'webroot', 'modified');
 	}
 
@@ -733,7 +887,7 @@ class FieldUploadBehavior extends ModelBehavior {
  * @return void;
  **/
 	private function _updateQueueModelIdKeys(Model $Model, $createdId) {
-		$queues = ['_deleteQueue', '_uploadQueue'];
+		$queues = ['_deleteQueue', '_uploadQueue', '_cropCopyQueue'];
 		foreach ($queues as $queue) {
 			if (isset ($this->{$queue}[$Model->alias][''])) {
 				$this->{$queue}[$Model->alias][$createdId] = $this->{$queue}[$Model->alias][''];

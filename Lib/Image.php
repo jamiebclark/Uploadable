@@ -242,6 +242,34 @@ class Image {
 	}
 
 /**
+ * Crops a portion of an image into a new size
+ *
+ * @param resource $srcImage The PHP image resource
+ * @param int $srcX The source X position
+ * @param int $srcY The source Y position
+ * @param int $srcW The source width
+ * @param int $srcH The source height
+ * @param int $dstW The destination width
+ * @param int $dstH The destination height
+ * @return resource;
+ **/
+	public static function cropPortion($srcImg, $srcX, $srcY, $srcW, $srcH, $dstW = null, $dstH = null) {
+		if (empty($dstW)) {
+			$dstW = $srcW;
+		}
+		if (empty($dstH)) {
+			$dstH = $srcH;
+		}
+		$dstImg = imagecreatetruecolor($dstW, $dstH);
+		try {
+			imagecopyresized($dstImg, $srcImg, 0, 0, $srcX, $srcY, $dstW, $dstH, $srcW, $srcH);
+		} catch (Exception $e) {
+			throw new Exception('Image copying failed: ' . $e->getMessage());
+		}
+		return $dstImg;
+	}
+
+/**
  * Forces an image to a new set of dimensions
  *
  * @param resource $img PHP Image Resource

@@ -1,0 +1,1 @@
+<?php echo $this->element('Uploadable.field_upload_images/upload');

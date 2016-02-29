@@ -114,7 +114,9 @@ class FieldUploadImageHelper extends AppHelper {
 
 		$attrs = $this->getDataFieldSize($data, $field, $size);
 		if (!empty($attrs['modified']) && !empty($options['modified'])) {
-			$src .= '?m=' . $attrs['modified'];
+			$src .= strpos($src, '?') !== false ? '&' : '?';
+			$src .= 'm=' . $attrs['modified'];
+			unset($attrs['modified']);
 		}
 
 		$url = $urlOptions = false;
@@ -201,11 +203,34 @@ class FieldUploadImageHelper extends AppHelper {
 				if ($src[0] != '/') {
 					$src = Configure::read('App.imageBaseUrl') . $src;
 				} else {
-					$src = Router::url($src);
+					$src = Router::url($src, true);
 				}
 			}
 		}
 		return $src;
+	}
+
+	public function editLink($model, $id, $result, $field, $size, $options = []) {
+		$img = $this->image($result, $field, $size, ['modified' => true]);
+		$options['escape'] = false;
+		$options = $this->Html->addClass((array)$options, 'uploadable--field-upload--edit-link');
+		return $this->Html->link($img, $this->editUrl($model, $id, $field, $size), $options);
+	}
+
+	public function editUrl($model, $id, $field, $size) {
+		$url = [
+			'controller' => 'field_upload',
+			'action' => 'edit',
+			$model,
+			$id,
+			$field,
+			$size,
+			'plugin' => 'uploadable',
+		];
+		if (!empty($this->request->params['prefix'])) {
+			$url[$this->request->params['prefix']] = false;
+		}
+		return $url;
 	}
 
 /**
