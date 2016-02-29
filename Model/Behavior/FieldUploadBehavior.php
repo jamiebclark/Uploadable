@@ -826,6 +826,7 @@ class FieldUploadBehavior extends ModelBehavior {
 			if (!empty($this->_urlBase)) {
 				$src = $this->_urlBase . $src;
 			}
+			$src = Router::url($src, true);
 		}
 
 		if (($queryCut = strpos($path, '?')) !== false) {
