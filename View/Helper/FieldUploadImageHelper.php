@@ -22,7 +22,7 @@ class FieldUploadImageHelper extends AppHelper {
 			$model,
 			$id, 
 			$field, 
-			$field,
+			$size,
 			'plugin' => 'uploadable',
 			'admin' => false,
 		],
