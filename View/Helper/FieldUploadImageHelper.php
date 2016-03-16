@@ -15,6 +15,19 @@ class FieldUploadImageHelper extends AppHelper {
 		return parent::beforeRender($viewFile, $options);
 	}
 	
+	public function resizeLink($text, $model, $id, $field, $size, $options = []) {
+		return $this->Html->link($text, [
+			'controller' => 'field_upload', 
+			'action' => 'edit', 
+			$model,
+			$id, 
+			$field, 
+			$field,
+			'plugin' => 'uploadable',
+			'admin' => false,
+		],
+		$options);
+	}
 /** 
  * Outputs a file form input for use with the FieldUpload Behavior
  *
