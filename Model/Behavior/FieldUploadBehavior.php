@@ -27,6 +27,8 @@ class FieldUploadBehavior extends ModelBehavior {
 
 	private $_deleteId;
 
+	protected $_skipSetFieldUpload;
+
 	public function __destructor() {
 		$this->_startUnlinkQueue();
 		return parent::__destructor();
@@ -98,9 +100,25 @@ class FieldUploadBehavior extends ModelBehavior {
 		return parent::setup($Model, $settings);
 	}
 
+	public function beforeFind(Model $Model, $query) {
+		$oQuery = $query;
+		if (isset($query['fieldUpload']) && $query['fieldUpload'] === false) {
+			$this->_skipSetFieldUpload = true;
+			unset($query['fieldUpload']);
+		}
+		if ($oQuery != $query) {
+			return $query;
+		}
+		return parent::beforeFind($Model, $query);
+	}
+
 	public function afterFind(Model $Model, $results, $primary = false) {
 		// Adds additional information to the find result pertaining to the uploaded files
-		$results = $this->setFieldUploadResultFields($Model, $results, $primary);
+		if (empty($this->_skipSetFieldUpload)) {
+			$results = $this->setFieldUploadResultFields($Model, $results, $primary);
+		} else {
+			$this->_skipSetFieldUpload = false;
+		}
 		return $results;
 	}
 
