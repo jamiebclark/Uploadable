@@ -28,10 +28,10 @@ class FieldUploadSimpleComponent extends Component {
 				$success = $Model->save($request->data[$alias], array('validate' => false));
 
 				if ($success) {
-					$this->Session->setFlash('Successfully updated ' . $field . ' image', 'default', array('class' => 'alert alert-success'));
+					$this->Flash->success('Successfully updated ' . $field . ' image');
 					$controller->redirect(array('action' => 'view', $id));
 				} else {
-					$this->Session->setFlash('There was an error saving the image', 'default', array('class' => 'alert alert-danger'));
+					$this->Flash->error('There was an error saving the image');
 				}
 
 			} else {

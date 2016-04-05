@@ -83,7 +83,7 @@ class FieldUploadController extends UploadableAppController {
 	}
 
 	private function _fieldUploadFlash($msg, $redirect = null) {
-		$this->Session->setFlash($msg);
+		$this->Flash->alert($msg);
 		if (!empty($redirect)) {
 			if ($redirect === true) {
 				$redirect = $this->referer();
