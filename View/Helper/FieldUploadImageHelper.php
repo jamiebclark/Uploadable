@@ -5,16 +5,10 @@
  * @package app.Plugin.Uploadable.VIew
  **/
 App::uses('AttrString', 'Uploadable.Lib');
-
-class FieldUploadImageHelper extends AppHelper {
+App::uses('FieldUploadHelper', 'Uploadable.View/Helper');
+class FieldUploadImageHelper extends FieldUploadHelper {
 	public $name = 'FieldUploadImage';
-	public $helpers = array('Html', 'Form');
 
-	public function beforeRender($viewFile, $options = []) {
-		$this->Html->css('Uploadable.style', null, ['inline' => false]);
-		return parent::beforeRender($viewFile, $options);
-	}
-	
 	public function resizeLink($text, $model, $id, $field, $size, $options = []) {
 		return $this->Html->link($text, [
 			'controller' => 'field_upload', 
@@ -28,19 +22,8 @@ class FieldUploadImageHelper extends AppHelper {
 		],
 		$options);
 	}
-/** 
- * Outputs a file form input for use with the FieldUpload Behavior
- *
- * @param string $name The field name
- * @param array $options The FormHelper options
- *
- * @return string The form input HTML
- **/
-	public function input($name, $options = []) {
-		$fieldParts = explode('.', $name);
-		$field = array_pop($fieldParts);
-		$dataName = implode('.', $fieldParts);
 
+	protected function inputDataDisplay($data, $field, $options = []) {
 		// The image display size
 		if (!empty($options['size'])) {
 			$size = $options['size'];
@@ -49,54 +32,20 @@ class FieldUploadImageHelper extends AppHelper {
 			$size = null;
 		}
 
+		$out = '';
 
-		if (!empty($fieldParts)) {
-			$count = count($fieldParts);
-			$model = $fieldParts[$count - 1];
-			if (is_numeric($model)) {
-				$index = $fieldParts[$count - 1];
-				$model = $count > 1 ? $fieldParts[$count - 2] : null;
-			}
-		}
-
-		if (empty($model)) {
-			if (empty($options['model'])) {
-				$modelNames = array_keys($this->request->params['models']);
-				$model = array_shift($modelNames);
-			} else {
-				$model = $options['model'];
-			}
-		}
-		unset($options['model']);
-
-		if (empty($dataName)) {
-			$dataName = $model;
-		}
-
-		$out = $this->Form->input("$dataName.$field", ['type' => 'file'] + (array) $options);
-		if ($this->Html->value("uploadable_storage.$dataName")) {
-			$data = unserialize(base64_decode($this->Html->value("uploadable_storage.$dataName")));
-		} else if ($this->Html->value($dataName)) {
-			$data = $this->Html->value($dataName);
-		} 
-
-		if (!empty($data)) {
-			if ($img = $this->image($data, $field, $size, [
-					'style' => 'max-width: 100%',
-					'modified' => true,
-				])) {
-				$out .= $img;
-				$out .= $this->Form->input("$dataName.$field.delete", [
-					'class' => 'checkbox',
-					'type' => 'checkbox',
-					'label' => 'Delete photo',
-				]);
-			}
-			$out .= $this->Form->hidden("uploadable_storage.$dataName", [
-				'value' => base64_encode(serialize($data))
+		if ($img = $this->image($data, $field, $size, [
+				'style' => 'max-width: 100%',
+				'modified' => true,
+			])) {
+			$out .= $img;
+			$out .= $this->Form->input("$dataName.$field.delete", [
+				'class' => 'checkbox',
+				'type' => 'checkbox',
+				'label' => 'Delete',
 			]);
 		}
-		return $out;
+		return $out . parent::inputDataDisplay($data, $field, $options);
 	}
 
 /**
@@ -210,19 +159,6 @@ class FieldUploadImageHelper extends AppHelper {
 		return $return;
 	}
 
-	public function src($data, $field, $size = null) {
-		if ($src = $this->getDataFieldSrc($data, $field, $size)) {
-			if (strpos($src, '://') === false) {
-				if ($src[0] != '/') {
-					$src = Configure::read('App.imageBaseUrl') . $src;
-				} else {
-					$src = Router::url($src, true);
-				}
-			}
-		}
-		return $src;
-	}
-
 	public function editLink($model, $id, $result, $field, $size, $options = []) {
 		$img = $this->image($result, $field, $size, ['modified' => true]);
 		$options['escape'] = false;
@@ -246,64 +182,7 @@ class FieldUploadImageHelper extends AppHelper {
 		return $url;
 	}
 
-/**
- * Finds the information pertaining to the Uploadable image from a passed result
- * 
- * @param Array $data Passed result
- * @param string $field The table field with file informaiton store
- * @return Array|null the Uploadable array of information
- **/
-	private function getDataField($data, $field) {
-		if (isset($data['uploadable'][$field])) {
-			$data = $data['uploadable'][$field];
-		} else if (isset($data[$field]) && is_array($data[$field])) {
-			$data = $data[$field];
-		} else {
-			$data = null;
-		}
-		return $data;
-	}
-
-/**
- * Finds the information for a specific size of image from the passed data
- *
- * @param Array $data Returned information
- * @param string $field The table field with file informaiton store
- * @param string|null $size The specific size of the image source
- * @return Array|null Array of image information if found, null if not
- **/
- 	private function getDataFieldSize($data, $field, $size = null) {
- 		$dataField = $this->getDataField($data, $field);
- 		$dataFieldSize = null;
-		if (!empty($dataField['sizes'])) {
-			// If no size is passed, pick the first size
-			if ($size === null) {
-				$dataFieldSize = reset($dataField['sizes']);
-			} else if (!empty($dataField['sizes'][$size])) {
-				$dataFieldSize = $dataField['sizes'][$size];
-			}
-		}
-		return $dataFieldSize;
-	}
-
-/**
- * Finds just the image src from the uploadable data
- *
- * @param Array $data Returned information
- * @param string $field The table field with file informaiton store
- * @param string|null $size The specific size of the image source
- * @return string|null Src path to image if found, null if not
- **/
-	private function getDataFieldSrc($data, $field, $size = null) {
-		$dataFieldSize = $this->getDataFieldSize($data, $field, $size);
-		if (!empty($dataFieldSize['src'])) {
-			return $dataFieldSize['src'];
-		} else {
-			return null;
-		}
-	}
-
-	private function parseOptions($options) {
+	protected function parseOptions($options) {
 		if (is_string($options)) {
 			if (substr($options, 0, 1) == '|') {
 				$options = AttrString::parse($options);
@@ -314,5 +193,9 @@ class FieldUploadImageHelper extends AppHelper {
 		}
 		$options = $this->addClass($options, 'uploadable-image');
 		return $options;
+	}
+
+	protected function getBaseUrl() {
+		return Configure::read('App.imageBaseUrl');
 	}
 }

@@ -78,7 +78,7 @@ class FieldUploadBehavior extends ModelBehavior {
 		if (!isset($this->fields[$Model->alias])) {
 			$this->fields[$Model->alias] = [];
 		}
-
+		
 		$tmpFields = [];
 		foreach ($fields as $k => $v) {
 			if (is_numeric($k)) {
@@ -97,6 +97,7 @@ class FieldUploadBehavior extends ModelBehavior {
 			$this->settings[$Model->alias] = [];
 		}
 		$this->settings[$Model->alias] = array_merge($this->settings[$Model->alias], (array) $settings);
+
 		return parent::setup($Model, $settings);
 	}
 
@@ -430,7 +431,6 @@ class FieldUploadBehavior extends ModelBehavior {
 			'conditions' => array($Model->escapeField() => $id)
 		));
 
-		//debug($result);
 		$result = $result[$Model->alias][$field];
 		$result = $this->_setResultField($Model, $field, $result);
 		return !empty($result['sizes'][$size]['path']) ? $result['sizes'][$size]['path'] : null;
@@ -723,7 +723,6 @@ class FieldUploadBehavior extends ModelBehavior {
 		}
 
 		$dir = $this->_getFieldDir($Model, $field);
-
 		$dirs = [];
 		if (empty($config['sizes'])) {
 			$dirs[$dir] = [];
@@ -754,31 +753,35 @@ class FieldUploadBehavior extends ModelBehavior {
 		// Replaces constants within the directory
 		$config['dir'] = $this->_dsReplace($config['dir']);
 
-		// Configures sizes
-		$sizes = [];
-		if (!isset($config['sizes'])) {
-			// If no sizes are set, it copies all from the config file
-			$sizes = Configure::read('Uploadable.sizes');
-		} else {
-			if (!is_array($config['sizes'])) {
-				$config['sizes'] = [$config['sizes']];
-			}
-			foreach ($config['sizes'] as $size => $sizeConfig) {
-				if (is_numeric($size)) {
-					$size = $sizeConfig;
-					$sizeConfig = null;
+		if (empty($config['isImage'])):
+			$config['sizes'] = false;
+		else:
+			// Configures sizes
+			$sizes = [];
+			if (!isset($config['sizes'])) {
+				// If no sizes are set, it copies all from the config file
+				$sizes = Configure::read('Uploadable.sizes');
+			} else {
+				if (!is_array($config['sizes'])) {
+					$config['sizes'] = [$config['sizes']];
 				}
-				// If size config is set to false it skips that size
-				if ($sizeConfig !== false) {
-					if ($sizeConfig === null && Configure::check('Uploadable.sizes.' . $size)) {
-						$sizeConfig = Configure::read('Uploadable.sizes.' . $size);
+				foreach ($config['sizes'] as $size => $sizeConfig) {
+					if (is_numeric($size)) {
+						$size = $sizeConfig;
+						$sizeConfig = null;
 					}
-					$sizes[$size] = $sizeConfig;
-				}
+					// If size config is set to false it skips that size
+					if ($sizeConfig !== false) {
+						if ($sizeConfig === null && Configure::check('Uploadable.sizes.' . $size)) {
+							$sizeConfig = Configure::read('Uploadable.sizes.' . $size);
+						}
+						$sizes[$size] = $sizeConfig;
+					}
 
+				}
 			}
-		}
-		$config['sizes'] = $sizes;
+			$config['sizes'] = $sizes;
+		endif;
 
 		return $config;
 	}
@@ -797,45 +800,67 @@ class FieldUploadBehavior extends ModelBehavior {
 		$config = $this->fields[$Model->alias][$field];
 
 		$result = ['isDefault' => false];
-		$root = Folder::slashTerm($this->_getFieldDir($Model, $field));
 		$webroot = $this->_webroot;
 
 		if (!empty($config['sizes']) && is_array($config['sizes'])):
 			foreach ($config['sizes'] as $size => $sizeConfig):
-				$path = $src = $width = $height = $mime = $filesize = $modified = null;
-				$info = array();
-				if (!empty($value)) {
-					$path = Folder::addPathElement($root, $size);
-					$path = Folder::slashTerm($path) . $value;
-					$info = $this->_getImageInfo($path);
-				}
-
-				// Checks for default images if path is not found
-				if (empty($info['path']) && !empty($config['default'])) {
+				$result['sizes'][$size] = $this->_getResultFieldRow($Model, $field, $value, $size);
+				if (!empty($result['sizes'][$size]['isDefault'])) {
 					$result['isDefault'] = true;
-					$path = Folder::addPathElement($root, $size);
-					$path = Folder::slashTerm($path) . 'default.jpg';
-					$info = $this->_getImageInfo($path);
-					if (empty($info['path'])) {
-						$this->_updateDefaultImage($Model, $field);
-						$info = $this->_getImageInfo($path);
-					}
 				}
-				$result['sizes'][$size] = $info; 
 			endforeach;
+		else:
+			$result['file'] = $this->_getResultFieldRow($Model, $field, $value);
+			if (!empty($result['file']['isDefault'])) {
+				$result['isDefault'] = true;
+			}
 		endif;
 		return $result;
 	}
 
+	private function _getResultFieldRow($Model, $field, $value = null, $size = null) {
+		$root = Folder::slashTerm($this->_getFieldDir($Model, $field));
+		$config = $this->fields[$Model->alias][$field];
+
+		$path = $src = $width = $height = $mime = $filesize = $modified = null;
+		if (isset($size)) {
+			$path = Folder::addPathElement($root, $size);
+		} else {
+			$path = $root;
+		}
+		$row = array();
+
+		if (!empty($value)) {
+			$path = Folder::slashTerm($path) . $value;
+			$row = $this->_getFileInfo($path, $config['isImage']);
+		}
+
+		// Checks for default images if path is not found
+		if (empty($row['path']) && !empty($config['default'])) {
+			$row['isDefault'] = true;
+			$path = Folder::slashTerm($path) . 'default.jpg';
+			$row = $this->_getFileInfo($path, $config['isImage']);
+			if (empty($row['path'])) {
+				$this->_updateDefaultImage($Model, $field);
+				$row = $this->_getFileInfo($path, $config['isImage']);
+			}
+		}
+		return $row;
+	}
+
+
 /**
- * Retrieves information about an image
+ * Retrieves information about a file
  *
- * @param string $path The path to the image
- * @return array An array of image information. All will be set to null if image is not found
+ * @param string $path The path to the file
+ * @return array An array of file information. All will be set to null if file is not found
  **/
-	private function _getImageInfo($path) {
+	private function _getFileInfo($path, $isImage = false) {
 		$webroot = $this->_webroot;
-		$src = $width = $height = $mime = $filesize = $modified = null;
+		$fileAttrs = ['path', 'src', 'mime', 'extension', 'webroot', 'filesize', 'modified'];
+		if ($isImage) {
+			$fileAttrs = array_merge($fileAttrs, ['width', 'height']);
+		}
 		if (!empty($webroot) && strpos($path, $webroot) === 0) {
 			$src = substr($path, strlen($webroot) - 1);
 			if (DS == '\\') {
@@ -846,20 +871,24 @@ class FieldUploadBehavior extends ModelBehavior {
 			}
 			$src = Router::url($src, true);
 		}
-
 		if (($queryCut = strpos($path, '?')) !== false) {
 			$path = substr($path, 0, $queryCut);
 		}
 		if (is_file($path)) {
-			$info = getimagesize($path);
-			list($width, $height) = $info;
-			$mime = $info['mime'];
+			$pathInfo = pathinfo($path);
+			$extension = $pathInfo['extension'];
+			$mime = mime_content_type($path);
 			$filesize = filesize($path);
 			$modified = filemtime($path);
+			if ($isImage) {
+				$imageSize = getimagesize($path);
+				list($width, $height) = $imageSize;
+			}
 		} else {
 			$path = null;
 		}
-		return compact('path', 'src', 'width', 'height', 'mime', 'filesize', 'webroot', 'modified');
+		$info = compact($fileAttrs);
+		return $info;
 	}
 
 /**
