@@ -877,7 +877,11 @@ class FieldUploadBehavior extends ModelBehavior {
 		if (is_file($path)) {
 			$pathInfo = pathinfo($path);
 			$extension = $pathInfo['extension'];
-			$mime = mime_content_type($path);
+			if (function_exists('mime_content_type')) {
+				$mime = mime_content_type($path);
+			} else {
+				$mime = null;
+			}
 			$filesize = filesize($path);
 			$modified = filemtime($path);
 			if ($isImage) {
