@@ -107,6 +107,7 @@ class FieldUploadBehavior extends ModelBehavior {
 			$this->_skipSetFieldUpload = true;
 			unset($query['fieldUpload']);
 		}
+
 		if ($oQuery != $query) {
 			return $query;
 		}
@@ -120,6 +121,7 @@ class FieldUploadBehavior extends ModelBehavior {
 		} else {
 			$this->_skipSetFieldUpload = false;
 		}
+
 		return $results;
 	}
 
@@ -824,21 +826,21 @@ class FieldUploadBehavior extends ModelBehavior {
 
 		$path = $src = $width = $height = $mime = $filesize = $modified = null;
 		if (isset($size)) {
-			$path = Folder::addPathElement($root, $size);
+			$basePath = Folder::addPathElement($root, $size);
 		} else {
-			$path = $root;
+			$basePath = $root;
 		}
 		$row = array();
 
 		if (!empty($value)) {
-			$path = Folder::slashTerm($path) . $value;
+			$path = Folder::slashTerm($basePath) . $value;
 			$row = $this->_getFileInfo($path, $config['isImage']);
 		}
 
 		// Checks for default images if path is not found
 		if (empty($row['path']) && !empty($config['default'])) {
 			$row['isDefault'] = true;
-			$path = Folder::slashTerm($path) . 'default.jpg';
+			$path = Folder::slashTerm($basePath) . 'default.jpg';
 			$row = $this->_getFileInfo($path, $config['isImage']);
 			if (empty($row['path'])) {
 				$this->_updateDefaultImage($Model, $field);
@@ -861,6 +863,7 @@ class FieldUploadBehavior extends ModelBehavior {
 		if ($isImage) {
 			$fileAttrs = array_merge($fileAttrs, ['width', 'height']);
 		}
+
 		if (!empty($webroot) && strpos($path, $webroot) === 0) {
 			$src = substr($path, strlen($webroot) - 1);
 			if (DS == '\\') {
@@ -882,6 +885,7 @@ class FieldUploadBehavior extends ModelBehavior {
 			} else {
 				$mime = null;
 			}
+
 			$filesize = filesize($path);
 			$modified = filemtime($path);
 			if ($isImage) {
