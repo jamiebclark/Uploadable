@@ -19,9 +19,9 @@ class FieldUploadController extends UploadableAppController {
 		if ($hasData) {
 			$data = $this->request->data[$this->_Model->alias];
 			if ($this->_Model->save($data)) {
-				$this->_fieldUploadFlash('Successfully added image', $data['redirect']);
+				$this->_fieldUploadFlash('Successfully added image', $data['redirect'], 'success');
 			} else {
-				$this->_fieldUploadFlash('There was an error saving the image');
+				$this->_fieldUploadFlash('There was an error saving the image', null, 'error');
 			}
 		} else {
 			$this->request->data = $result;
@@ -40,9 +40,9 @@ class FieldUploadController extends UploadableAppController {
 		if ($hasData) {
 			$data = $this->request->data[$this->_Model->alias];
 			if ($this->_Model->save($data)) {
-				$this->_fieldUploadFlash('Successfully resized image', $data['redirect']);
+				$this->_fieldUploadFlash('Successfully resized image', $data['redirect'], 'success');
 			} else {
-				$this->_fieldUploadFlash('There was an error resizing the image');
+				$this->_fieldUploadFlash('There was an error resizing the image', null, 'error');
 			}
 		}
 	}
@@ -82,8 +82,8 @@ class FieldUploadController extends UploadableAppController {
 		return $result;
 	}
 
-	private function _fieldUploadFlash($msg, $redirect = null) {
-		$this->Flash->alert($msg);
+	private function _fieldUploadFlash($msg, $redirect = null, $element = 'alert') {
+		$this->Flash->{$element}($msg);
 		if (!empty($redirect)) {
 			if ($redirect === true) {
 				$redirect = $this->referer();

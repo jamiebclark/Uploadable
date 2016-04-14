@@ -23,7 +23,7 @@ class FieldUploadImageHelper extends FieldUploadHelper {
 		$options);
 	}
 
-	protected function inputDataDisplay($data, $field, $options = []) {
+	protected function inputDataDisplay($dataName, $data, $field, $options = []) {
 		// The image display size
 		if (!empty($options['size'])) {
 			$size = $options['size'];
@@ -45,7 +45,7 @@ class FieldUploadImageHelper extends FieldUploadHelper {
 				'label' => 'Delete',
 			]);
 		}
-		return $out . parent::inputDataDisplay($data, $field, $options);
+		return $out . parent::inputDataDisplay($dataName, $data, $field, $options);
 	}
 
 /**
