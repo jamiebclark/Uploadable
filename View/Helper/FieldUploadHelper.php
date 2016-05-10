@@ -70,13 +70,13 @@ class FieldUploadHelper extends AppHelper {
 		} 
 
 		if (!empty($data)) {
-			$out .= $this->inputDataDisplay($data, $field, $options);
+			$out .= $this->inputDataDisplay($data, $field, $dataName, $options);
 		}
 
 		return $out;
 	}
 
-	protected function inputDataDisplay($data, $field, $options = []) {
+	protected function inputDataDisplay($data, $field, $dataName, $options = []) {
 		$out = '';
 		$out .= $this->Form->hidden("uploadable_storage.$dataName", [
 			'value' => base64_encode(serialize($data))
