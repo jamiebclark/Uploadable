@@ -16,7 +16,7 @@
 		]);
 		echo $this->Form->hidden('id', ['value' => $result[$alias][$primaryKey]]);
 		echo $this->Form->hidden('redirect', ['value' => $redirect]);
-		echo $this->element('Uploadable.field_upload_images/resize_input');
+		echo $this->element('Uploadable.field_upload_images/resize_input', compact('field', 'size'));
 		echo $this->Form->submit('Resize');
 		echo $this->Form->end();
 		?>

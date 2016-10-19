@@ -47,6 +47,39 @@ class FieldUploadController extends UploadableAppController {
 		}
 	}
 
+	public function admin_refresh($modelName = null, $field = null, $fromSize = null) {
+		$Model = ClassRegistry::init($modelName);
+		$result = $Model->find('all', [
+			'fields' => [
+				$Model->escapeField(),
+				$Model->escapeField($field),
+			],
+		]);
+
+		list($plugin, $alias) = pluginSplit($modelName);
+		$redirect = [
+			'controller' => Inflector::tableize($alias),
+			'action' => 'index',
+			'plugin' => $plugin,
+			'staff' => true,
+		];
+
+		$count = 0;
+		foreach ($result as $row) {
+			$row = $row[$Model->alias];
+			if (!empty($row[$field])) {
+				$Model->refreshFieldUpload($row[$Model->primaryKey], $field, $fromSize);
+				$count++;
+			}
+		}
+
+		$this->_fieldUploadFlash(
+			sprintf('Refreshed %s images in the %s field: %s', number_format($count), $modelName, $field),
+			$redirect,
+			'success'
+		);
+	}
+
 	private function _setEditVars($modelName, $modelId, $field, $size) {
 		$result = $this->_setFieldUploadModel($modelName, $modelId, $field);
 

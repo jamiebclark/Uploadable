@@ -13,7 +13,7 @@ $activeTab = 0;
 ?>
 <div>
 	<?php if (count($tabs) > 1): ?>
-		<ul class="nav nav-tabs">
+		<ul role="tablist" class="nav nav-tabs">
 			<?php foreach ($tabTitles as $k => $tabTitle): 
 				$id = 'tab-' . $k;
 				$class = $k == $activeTab ? 'active' : null;
