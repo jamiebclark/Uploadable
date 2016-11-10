@@ -1,1 +1,1 @@
-<?php echo $this->element('Uplodable.field_upload_images/resize');
+<?php echo $this->element('Uploadable.field_upload_images/resize');

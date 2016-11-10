@@ -10,6 +10,10 @@ class FieldUploadImageHelper extends FieldUploadHelper {
 	public $name = 'FieldUploadImage';
 
 	public function resizeLink($text, $model, $id, $field, $size, $options = []) {
+		if (!empty($options['cropCopy'])) {
+			$cropCopy  = is_array($options['cropCopy']) ? implode(',', $options['cropCopy']) : $options['cropCopy'];
+			unset($options['cropCopy']);
+		}
 		return $this->Html->link($text, [
 			'controller' => 'field_upload', 
 			'action' => 'edit', 
@@ -19,6 +23,7 @@ class FieldUploadImageHelper extends FieldUploadHelper {
 			$size,
 			'plugin' => 'uploadable',
 			'admin' => false,
+			'cropCopy' => $cropCopy
 		],
 		$options);
 	}

@@ -45,6 +45,8 @@ class FieldUploadController extends UploadableAppController {
 				$this->_fieldUploadFlash('There was an error resizing the image', null, 'error');
 			}
 		}
+
+
 	}
 
 	public function admin_refresh($modelName = null, $field = null, $fromSize = null) {
@@ -99,6 +101,11 @@ class FieldUploadController extends UploadableAppController {
 		}
 		$this->set(compact('size', 'redirect'));
 		$this->request->data += $this->_Model->getCropCopyFieldUploadSettings($modelId, $field, $size);
+
+		if (!empty($this->request->named['cropCopy'])) {
+			$this->request->data[$modelName]['FieldUploadCropCopy'][$field][$size]['copySizes'] = $this->request->named['cropCopy'];
+		}
+
 		return $result;
 	}
 

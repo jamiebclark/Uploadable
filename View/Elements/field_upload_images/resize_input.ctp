@@ -10,6 +10,7 @@ $default = [
 	'fullSizeKey' => $this->Form->value("$prefix.full_size"),
 	'dimensions' => [0,0],
 	'result' => $this->request->data,
+	'copySizes' => $this->Form->value("$prefix.copySizes")
 ];
 extract(array_merge($default, compact(array_keys($default))));
 
@@ -27,6 +28,6 @@ echo $this->FieldUploadImage->image($result[$alias], $field, $fullSizeKey, [
 	'data-select-h' => $this->Form->value("$prefix.dimensions.1"),
 	'modified' => true,
 ]);
-foreach (['x','y','w','h'] as $coord):
+foreach (['x','y','w','h', 'copySizes'] as $coord):
 	echo $this->Form->hidden("$prefix.$coord", ['id' => $coord]);
 endforeach;

@@ -157,6 +157,15 @@ class FieldUploadBehavior extends ModelBehavior {
 			foreach ($data['FieldUploadCropCopy'] as $field => $sizes) {
 				foreach ($sizes as $size => $attrs) {
 					$this->_addCropCopyQueue($Model, $id, $field, $size, $attrs);
+					if (!empty($attrs['copySizes'])) {
+						$copySizes = array_map('trim', explode(',', $attrs['copySizes']));
+						unset($attrs['copySizes']);
+						foreach ($copySizes as $copySize) {
+							if ($this->hasSize($Model, $field, $copySize)) {
+								$this->_addCropCopyQueue($Model, $id, $field, $copySize, $attrs);
+							}
+						}
+					}
 				}
 			}
 			unset($data['FieldUploadCropCopy']);
@@ -487,7 +496,7 @@ class FieldUploadBehavior extends ModelBehavior {
 		if (empty($this->fields[$Model->alias][$field])) {
 			throw new Exception (sprintf('Cannot find FieldUpload field "%s" for model %s', $field, $Model->alias));
 		}
-		if (!array_key_exists($size, $this->fields[$Model->alias][$field]['sizes'])) {
+		if (!$this->hasSize($Model, $field, $size)) {
 			throw new Exception (sprintf('Model %s and field %s does not have a size set for size key: "%s"', $Model->alias, $field, $size));
 		}
 		$result = $Model->find('first', array(
@@ -916,6 +925,18 @@ class FieldUploadBehavior extends ModelBehavior {
 			}
 		}
 		return $row;
+	}
+
+/**
+ * Determines if a size exists for a Model's field
+ *
+ * @param Model $Model the referenced Model object
+ * @param string $field The model field
+ * @param string $size The size to check
+ * @return bool;
+ **/
+	private function hasSize($Model, $field, $size) {
+		return !empty($this->fields[$Model->alias][$field]['sizes'][$size]);
 	}
 
 
