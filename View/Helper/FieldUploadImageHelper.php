@@ -13,6 +13,8 @@ class FieldUploadImageHelper extends FieldUploadHelper {
 		if (!empty($options['cropCopy'])) {
 			$cropCopy  = is_array($options['cropCopy']) ? implode(',', $options['cropCopy']) : $options['cropCopy'];
 			unset($options['cropCopy']);
+		} else {
+			$copCopy = null;
 		}
 		return $this->Html->link($text, [
 			'controller' => 'field_upload', 
