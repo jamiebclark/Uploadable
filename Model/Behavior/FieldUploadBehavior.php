@@ -936,7 +936,11 @@ class FieldUploadBehavior extends ModelBehavior {
  * @return bool;
  **/
 	private function hasSize($Model, $field, $size) {
-		return !empty($this->fields[$Model->alias][$field]['sizes'][$size]);
+		if (!empty($this->fields[$Model->alias][$field]['sizes'])) {
+			return array_key_exists($size, $this->fields[$Model->alias][$field]['sizes']);
+		} else {
+			return false;
+		}
 	}
 
 
