@@ -49,14 +49,22 @@ class FieldUploadController extends UploadableAppController {
 
 	}
 
+/**
+ * Re-saves all the images based on the config settings
+ *
+ * @param string $modelName The name of the model with the FieldUpload behavior
+ * @param string $field The name of the field used in the FieldUpload behavior
+ * @param string $fromSize Which size to use as the reference to resize
+ * @return void;
+ **/
 	public function admin_refresh($modelName = null, $field = null, $fromSize = null) {
 		$Model = ClassRegistry::init($modelName);
-		$result = $Model->find('all', [
-			'fields' => [
-				$Model->escapeField(),
-				$Model->escapeField($field),
-			],
-		]);
+		$result = $Model->query(sprintf('SELECT %s, %s FROM %s AS %s', 
+			$Model->escapeField(),
+			$Model->escapeField($field),
+			$Model->getDataSource()->fullTableName($Model),
+			$Model->alias
+		), false);
 
 		list($plugin, $alias) = pluginSplit($modelName);
 		$redirect = [
