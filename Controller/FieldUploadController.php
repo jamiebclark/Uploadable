@@ -58,13 +58,16 @@ class FieldUploadController extends UploadableAppController {
  * @return void;
  **/
 	public function admin_refresh($modelName = null, $field = null, $fromSize = null) {
+		// Selects all entries in the model (avoids caching)
 		$Model = ClassRegistry::init($modelName);
 		$result = $Model->query(sprintf('SELECT %s, %s FROM %s AS %s', 
-			$Model->escapeField(),
-			$Model->escapeField($field),
-			$Model->getDataSource()->fullTableName($Model),
-			$Model->alias
-		), false);
+				$Model->escapeField(),
+				$Model->escapeField($field),
+				$Model->getDataSource()->fullTableName($Model),
+				$Model->alias
+			), 
+			false // Prevents Caching
+		);
 
 		list($plugin, $alias) = pluginSplit($modelName);
 		$redirect = [
