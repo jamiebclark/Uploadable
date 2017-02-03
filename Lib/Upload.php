@@ -210,6 +210,10 @@ class Upload {
 			}
 			return false;
 		}
+		if (empty($dst)) {
+			EasyLog::error("Destination directory is blank");
+			return false;
+		}
 
 		// Since we're converting to JPG, remove the transparency color
 		$img = Image::replaceTransparency($img, array(255,255,255));
@@ -253,7 +257,9 @@ class Upload {
 
 		EasyLog::log("Copying image filename '$dstName' into directory '$dstDir'");
 		EasyLog::log(compact('dst', 'src'));
-		
+	
+//debug(compact(['dstName', 'dstDir', 'dst', 'src']));
+	
 		if (!is_dir( $dstDir)) {
 			if (!mkdir($dstDir, 0777, true)) {
 				EasyLog::error('Upload image directory, ' . $dstDir . ' does not exist and could not be created');
