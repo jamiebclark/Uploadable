@@ -15,6 +15,8 @@ class FieldUploadBehavior extends ModelBehavior {
 
 	// Created in beforeSave and executed in afterSave
 	protected $_uploadQueue = [];
+	// Created in beforeSave and exectued in afterSave
+	protected $_uploadFromUrlQueue = [];
 	// Created in beforeSave and executed in afterSave
 	protected $_deleteQueue = [];
 	// A list of files to be deleted before the object unloads
@@ -137,13 +139,14 @@ class FieldUploadBehavior extends ModelBehavior {
 		} else {
 			$data =& $Model->data;
 		}
-
 		$id = !empty($data['id']) ? $data['id'] : '';
 		foreach ($this->fields[$Model->alias] as $field => $config):
 			if (isset($data[$field]) && is_array($data[$field])) {
 				// If any files have been uploaded, queue them for upload
 				if (!empty($data[$field]['tmp_name'])) {
 					$this->_addUploadQueue($Model, $id, $field, $data[$field]);
+				} else if (!empty($data[$field]['url'])) {
+					$this->_addUploadFromUrlQueue($Model, $id, $field, $data[$field]['url']);
 				}
 				// If the files have been marked for deletion, queue them for deletion
 				if (!empty($data[$field]['delete'])) {
@@ -170,7 +173,6 @@ class FieldUploadBehavior extends ModelBehavior {
 			}
 			unset($data['FieldUploadCropCopy']);
 		}
-
 		return parent::beforeSave($Model, $options);
 	}
 
@@ -180,9 +182,11 @@ class FieldUploadBehavior extends ModelBehavior {
 			$this->_updateQueueModelIdKeys($Model, $id);
 		}
 		$this->_startUploadQueue($Model, $id);		// Uploads anything found in beforeSave
+		$this->_startUploadFromUrlQueue($Model, $id);
 		$this->_startCropCopyQueue($Model, $id);	// Crops and copies anything set in beforeSave
 		$this->_startDeleteQueue($Model, $id);		// Deletes anything marked for deletion
 		$this->_startUnlinkQueue();
+
 		return parent::afterSave($Model, $created, $options);
 	}
 
@@ -216,6 +220,21 @@ class FieldUploadBehavior extends ModelBehavior {
 			'tmp_name' => $filepath,
 			'name' => $id . '.jpg'
 		]);
+	}
+
+	public function uploadFieldFromUrl(Model $Model, $id, $field, $url) {
+		if (!($dir = $this->_getTmpDir('from_web'))) {
+			throw new Exception("Could not create directory to store uploadFieldFromUrl");
+		}
+		$tmpFile = $dir . $Model->alias . '-' . $id . '-' . time();
+		if (!($content = file_get_contents($url))) {
+			throw new Exception("Could not retrieve file: $url");
+		}
+		if (!file_put_contents($tmpFile, $content)) {
+			throw new Exception("Could not save content of $url to $tmpFile");
+		}
+		$this->_addUnlinkQueue($tmpFile);
+		return $this->uploadField($Model, $id, $field, $tmpFile);
 	}
 
 	public function setUploadFieldWebRoot(Model $Model, $root) {
@@ -516,6 +535,7 @@ class FieldUploadBehavior extends ModelBehavior {
 	private function _addUploadQueue(Model $Model, $id, $field, $fieldData) {
 		$this->_uploadQueue[$Model->alias][$id][$field] = $fieldData;
 	}
+
 /**
  * Uploads all files in the queue
  *
@@ -532,6 +552,23 @@ class FieldUploadBehavior extends ModelBehavior {
 				unset($this->_uploadQueue[$Model->alias][$id][$field]);
 			endforeach;
 			unset($this->_uploadQueue[$Model->alias][$id]);
+		endif;
+	}
+
+	private function _addUploadFromUrlQueue(Model $Model, $id, $field, $url) {
+		$this->_uploadFromUrlQueue[$Model->alias][$id][$field] = $url;
+	}
+
+	private function _startUploadFromUrlQueue(Model $Model, $id = null) {
+		if (empty($id)) {
+			$id = $Model->id;
+		}
+		if (!empty($this->_uploadFromUrlQueue[$Model->alias][$id])):
+			foreach ($this->_uploadFromUrlQueue[$Model->alias][$id] as $field => $url):
+				$this->uploadFieldFromUrl($Model, $id, $field, $url);
+				unset($this->_uploadFromUrlQueue[$Model->alias][$id][$field]);
+			endforeach;
+			unset($this->_uploadFromUrlQueue[$Model->alias][$id]);
 		endif;
 	}
 
@@ -645,10 +682,8 @@ class FieldUploadBehavior extends ModelBehavior {
 			$uniqId = md5(uniqid(time(), true));
 
 			$convertExt = 'jpg';
-			$convertDir = TMP . 'convert_pdf_to_jpg' . DS;
-			if (!is_dir($convertDir)) {
-				mkdir($convertDir);
-			}
+			$convertDir = $this->_getTmpDir('convert_pdf_to_jpg');
+
 			$srcName = $uniqId . '-from';
 			$dstName = $uniqId . '-to';
 
@@ -1047,7 +1082,7 @@ class FieldUploadBehavior extends ModelBehavior {
  * @return void;
  **/
 	private function _updateQueueModelIdKeys(Model $Model, $createdId) {
-		$queues = ['_deleteQueue', '_uploadQueue', '_cropCopyQueue'];
+		$queues = ['_deleteQueue', '_uploadQueue', '_uploadFromUrlQueue', '_cropCopyQueue'];
 		foreach ($queues as $queue) {
 			if (isset ($this->{$queue}[$Model->alias][''])) {
 				$this->{$queue}[$Model->alias][$createdId] = $this->{$queue}[$Model->alias][''];
@@ -1077,5 +1112,35 @@ class FieldUploadBehavior extends ModelBehavior {
 	private function _getWebroot($plugin = false) {
 		return $plugin ? APP . 'Plugin' . DS . $plugin . DS . 'webroot' . DS : $this->_webroot;
 	}
-	
+
+
+/**
+ * Returns directory
+ * If the directory does not exist, creates it
+ *
+ * @param string $dir The directory in question
+ * @return string Formatted directory string
+ **/
+	private function _getDir($dir) {
+		if (substr($dir, -1) !== DS) {
+			$dir .= DS;
+		}
+		if (!is_dir($dir)) {
+			if (!mkdir($dir, 755, true)) {
+				throw new Exception("COULD NOT CREATE DIR: $dir");
+				return false;
+			}
+		}
+		return $dir;
+	}
+
+/**
+ * Returns a sub directory of the uploadable temporary directory
+ * 
+ * @param string $dir The directory in question
+ * @return string Formatted directory string
+ **/
+	private function _getTmpDir($dir) {
+		return $this->_getDir(TMP . 'uploadable' . DS . $dir);
+	}
 }
