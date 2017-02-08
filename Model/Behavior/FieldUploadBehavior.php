@@ -4,6 +4,8 @@ App::uses('Upload', 'Uploadable.Lib');
 App::uses('PluginConfig', 'Uploadable.Lib');
 App::uses('UrlPath', 'Uploadable.Lib');
 
+App::uses('CakeSession', 'Model/Datasource');
+
 App::uses('Hash', 'Utility');
 App::uses('Folder', 'Utility');
 
@@ -32,6 +34,11 @@ class FieldUploadBehavior extends ModelBehavior {
 	private $_deleteId;
 
 	protected $_skipSetFieldUpload;
+
+	const URL_CACHE = 'Uploadable.FieldUploadUrl';
+	const FROM_URL_TMP = 'from_web';
+
+	private $_sessionId;
 
 	public function __destructor() {
 		$this->_startUnlinkQueue();
@@ -67,6 +74,9 @@ class FieldUploadBehavior extends ModelBehavior {
 
 			// Whether or not the 
 			'plugin' => null,
+
+			// Valid extensions
+			'extensions' => [],
 		];
 
 		// Corrects for development branch environment
@@ -129,11 +139,67 @@ class FieldUploadBehavior extends ModelBehavior {
 		} else {
 			$this->_skipSetFieldUpload = false;
 		}
-
 		return $results;
 	}
 
+	public function beforeValidate(Model $Model, $options = []) {
+		$sessionId = $this->getSessionId();
+		if (isset($Model->data[$Model->alias])) {
+			$data =& $Model->data[$Model->alias];
+		} else {
+			$data =& $Model->data;
+		}
+		$id = !empty($data['id']) ? $data['id'] : '';
+		foreach ($this->fields[$Model->alias] as $field => $config):
+			if (isset($data[$field]) && is_array($data[$field])) {
+				if (!empty($data[$field]['tmp_name'])) {
+					// Validates the extension of the uploaded file
+					if (!$this->validateFieldExtension($Model, $field, $data[$field]['name'])) {
+						return false;
+					}
+				} else if (!empty($data[$field]['url'])) {
+					// Pre-saves the remote file
+					try {
+						$this->storeFileFromUrl($Model, $id, $field, $data[$field]['url']);
+					} catch (Exception $e) {
+						$Model->invalidate("$field.url", $e->getMessage());
+						return false;
+					}
+					// Validates the extension of the remote file
+					if (!$this->validateFieldExtension($Model, $field, $data[$field]['name'], "$field.url")) {
+						return false;
+					}
+				}
+			}
+		endforeach;
+	}
+
+	public function validateFieldExtension($Model, $field, $filePath, $invalidateField = null) {
+		if (empty($invalidateField)) {
+			$invalidateField = $field;
+		}
+		$ext = UrlPath::getExtension($filePath);
+		if (!empty($this->fields[$Model->alias][$field]['extensions'])) {
+			if (!$this->matchExtension($ext, $this->fields[$Model->alias][$field]['extensions'])) {
+				$Model->invalidate($invalidateField, 'Invalid Extension: ' . strtoupper($ext));
+				return false;
+			}
+		}
+		return true;
+	}
+
+	protected function matchExtension($ext, $exts) {
+		$ext = strtolower($ext);
+		if (!is_array($exts)) {
+			$exts = array_map('trim', explode(',', $exts));
+		}
+		$exts = array_map('strtolower', $exts);
+		return in_array($ext, $exts);
+	}
+
 	public function beforeSave(Model $Model, $options = []) {
+		$sessionId = $this->getSessionId();
+
 		if (isset($Model->data[$Model->alias])) {
 			$data =& $Model->data[$Model->alias];
 		} else {
@@ -223,18 +289,101 @@ class FieldUploadBehavior extends ModelBehavior {
 	}
 
 	public function uploadFieldFromUrl(Model $Model, $id, $field, $url) {
-		if (!($dir = $this->_getTmpDir('from_web'))) {
+		$filename = $this->getStoredFileFromUrl($Model, $id, $field, $url);
+		$this->_addUnlinkQueue($filename);
+		return $this->uploadField($Model, $id, $field, $filename);
+	}
+
+/**
+ * Retrieves a unique session ID for the given transaction
+ *
+ * @return string;
+ **/
+	protected function getSessionId() {
+		if (!$this->_sessionId) {
+			$this->_sessionId = time();
+		}
+		return $this->_sessionId;
+	}
+
+/**
+ * Returns a unique pathname where a file downloaded from a URL can be stored
+ *
+ * @param Model $Model The model object
+ * @param int $id The model id
+ * @param string $field The field used to store the value
+ * @param string $url The URL where the remote file is located
+ * @return string The filename
+ **/
+	private function _getFromUrlTmpPath($Model, $id, $field, $url) {
+		if (!($dir = $this->_getTmpDir(self::FROM_URL_TMP))) {
 			throw new Exception("Could not create directory to store uploadFieldFromUrl");
 		}
-		$tmpFile = $dir . $Model->alias . '-' . $id . '-' . time();
+		$path = $dir . $Model->alias . '-' . $id . '-' . $field . '-' . time();
+		if ($ext = UrlPath::getExtension($path)) {
+			$path .= '.' . $ext;
+		}
+		return $path;
+	}
+
+/**
+ * Stores a file from a remote URL to a local location
+ *
+ * @param Model $Model The model object
+ * @param int $id The model id
+ * @param string $field The field used to store the value
+ * @param string $url The URL where the remote file is located
+ * @return string The filename
+ **/
+	protected function storeFileFromUrl($Model, $id, $field, $url) {
+		$sessionId = $this->getSessionId();
+		$filename = $this->_getFromUrlTmpPath($Model, $id, $field, $url);
+		try {
+			$this->_putUrl($url, $filename);
+		} catch (Exception $e) {
+			throw $e;
+			return false;
+		}
+		$this->_filesFromUrl[$sessionId][$Model->alias][$field][$url] = $filename;
+		return $filename;
+	}
+
+	protected function getStoredFileFromUrl($Model, $id, $field, $url) {
+		$sessionId = $this->_getSessionId();
+		if (empty($this->_filesFromUrl[$sessionId][$Model->alias][$field][$url])) {
+			$this->storeFileFromUrl($Model, $id, $field, $url);			
+		}
+		return $this->_filesFromUrl[$sessionId][$Model->alias][$field][$url];
+	}
+
+/**
+ * Stores a file from a remote location to a local location
+ *
+ * @param string $url The remote url
+ * @param string $dst The destination path
+ * @return bool
+ * @throws Exception if it can't place the contents
+ **/
+	private function _putUrl($url, $dst) {
+		$content = $this->_getUrl($url);
+		if (!file_put_contents($dst, $content)) {
+			throw new Exception("Could not save content of $url to $tmpFile");
+		}
+		return true;
+	}
+
+/**
+ * Retrieves the contents of a remote URL
+ * 
+ * @param string $url The remote file URL
+ * @return mixed The content of the file
+ * @throws Exception if cannot retrieve
+ **/
+	private function _getUrl($url) {
 		if (!($content = file_get_contents($url))) {
 			throw new Exception("Could not retrieve file: $url");
 		}
-		if (!file_put_contents($tmpFile, $content)) {
-			throw new Exception("Could not save content of $url to $tmpFile");
-		}
-		$this->_addUnlinkQueue($tmpFile);
-		return $this->uploadField($Model, $id, $field, $tmpFile);
+		return $content;
 	}
 
 	public function setUploadFieldWebRoot(Model $Model, $root) {

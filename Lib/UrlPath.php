@@ -29,4 +29,9 @@ class UrlPath {
 		}
 		return str_replace($find, $replace, $path);
 	}
+
+	static public function getExtension($path) {
+		$info = pathinfo($path);
+		return !empty($info['extension']) ? $info['extension'] : false;
+	}
 }
