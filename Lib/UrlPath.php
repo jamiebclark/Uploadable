@@ -34,7 +34,7 @@ class UrlPath {
 	static public function getExtension($path) {
 		if (is_file($path)) {
 			$info = pathinfo($path);
-			$ext = !empty($info['extension']) ? $info['extension'] : false;
+			$ext = !empty($info['extension']) && $info['extension'] != 'tmp' ? $info['extension'] : false;
 			if (empty($ext)) {
 				$ext = Image::mimeExtension(mime_content_type($path));
 			}

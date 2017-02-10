@@ -381,6 +381,9 @@ class FieldUploadBehavior extends ModelBehavior {
 			throw $e;
 			return false;
 		}
+		if (!empty($this->fields[$Model->alias][$field]['isImage'])) {
+			Image::fixOrientation($filename);
+		}
 		$this->_filesFromUrl[$sessionId][$Model->alias][$field][$url] = $filename;
 		return $filename;
 	}
@@ -955,9 +958,14 @@ class FieldUploadBehavior extends ModelBehavior {
 			$config['randomPath'] = false;	//Turns it off before passing to the Upload Utility so we don't do it twice
 		}
 
+		// Checks if image is oriented correctly
+		if (!empty($config['isImage'])) {
+			Image::fixOrientation($data['tmp_name']);
+		}
+
 		if ($result = Upload::copy($data, $dirs, $config)) {
 			if (!empty($config['gitignore'])) {
-				Upload::gitIgnore($this->_getFieldDir($Model, $field));
+				Upload::gitIgnore($this->getFieldDir($Model, $field));
 			}
 			$Model->save([
 				$Model->primaryKey => $id,
@@ -1022,10 +1030,9 @@ class FieldUploadBehavior extends ModelBehavior {
 			throw new Exception(sprintf('No upload directory found for field: "%s"', $field));
 		}
 
-		$dir = $this->_getFieldDir($Model, $field);
 		$dirs = [];
 		if (empty($config['sizes'])) {
-			$dirs[$dir] = [];
+			$dirs[$this->getFieldDir($Model, $field)] = [];
 		} else {
 			foreach ($config['sizes'] as $size => $sizeConfig) {
 				if (is_numeric($size)) {
@@ -1033,7 +1040,7 @@ class FieldUploadBehavior extends ModelBehavior {
 					$sizeConfig = [];
 				}
 				if ($sizeConfig !== false) {
-					$dirs[Folder::slashTerm(Folder::addPathElement($dir, $size))] = $sizeConfig;
+					$dirs[$this->getFieldDir($Model, $field, $size)] = $sizeConfig;
 				}
 			}
 		}
@@ -1123,15 +1130,10 @@ class FieldUploadBehavior extends ModelBehavior {
 	}
 
 	private function _getResultFieldRow($Model, $field, $value = null, $size = null) {
-		$root = Folder::slashTerm($this->_getFieldDir($Model, $field));
 		$config = $this->fields[$Model->alias][$field];
 
 		$path = $src = $width = $height = $mime = $filesize = $modified = null;
-		if (isset($size)) {
-			$basePath = Folder::addPathElement($root, $size);
-		} else {
-			$basePath = $root;
-		}
+		$basePath = $this->getFieldDir($Model, $field, $size);
 		$row = array();
 
 		if (!empty($value)) {
@@ -1258,10 +1260,31 @@ class FieldUploadBehavior extends ModelBehavior {
  *
  * @param Model $Model The associated model
  * @param string $field The field of the image in the model
+ * @param bool $useRoot Whether or not to include the root path as well
  * @return string The base upload directory
  **/
-	private function _getFieldDir(Model $Model, $field) {
-		return Folder::addPathElement($this->fields[$Model->alias][$field]['root'], $this->fields[$Model->alias][$field]['dir']);
+	public function getFieldDir(Model $Model, $field, $size = null, $useRoot = true) {
+		$config = $this->fields[$Model->alias][$field];
+		$dir = $config['dir'];
+		if ($useRoot) {
+			$dir = Folder::addPathElement($config['root'], $dir);
+		}
+		if (!empty($size)) {
+			$dir = Folder::addPathElement($dir, $size);
+		}
+		return Folder::slashTerm(UrlPath::normalizeFilePath($dir));
+	}
+
+	public function getFieldUrlDir(Model $Model, $field, $size = null) {
+		$dir = $this->getFieldDir($Model, $field, $size, false);
+		$dir = UrlPath::normalizeUrlPath($dir);
+		if (!empty($this->fields[$Model->alias][$field]['isImage'])) {
+			// Strips leading "img/" if it's an image file
+			if (substr($dir, 0, 4) == 'img/') {
+				$dir = substr($dir, 4);
+			}
+		}
+		return $dir;
 	}
 
 /**

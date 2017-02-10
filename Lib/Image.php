@@ -38,6 +38,49 @@ class Image {
 		}
 	}
 	
+/**
+ * Examins the exif data for an image to try and detect if the orientation is incorrect. Fixes the image if necessary
+ *
+ * @param resource $image The image resource
+ * @param string $filename The filename where the image is stored
+ * @return bool|null True on success, false on failue, null on no change
+ **/
+	public static function fixOrientation($filename) {
+		if (!is_file($filename)) {
+			return false;
+		}
+		if (($size = getimagesize($filename)) === false) {
+			return false;
+		}
+		if (empty($size['mime'])) {
+			return false;
+		}
+
+		$image = self::createFromFile($filename);
+		$exif = exif_read_data($filename);
+		$angle = 0;
+
+		if (!empty($exif['Orientation'])) {
+			switch ($exif['Orientation']) {
+				case 3:
+					$angle = 180;
+					break;
+				case 6:
+					$angle = -90;
+					break;
+				case 8:
+					$angle = 90;
+					break;
+			}
+		}
+		if ($angle) {
+			$image = imagerotate($image, $angle, 0);
+			self::imageOutput($size['mime'], $image, $filename, 100);
+			return true;
+		}
+		return null;
+	}
+
 	public static function createFromFile($filename) {
 		ini_set("memory_limit", "1G");
 
@@ -162,11 +205,11 @@ class Image {
 	}
 
 	/*********************************************/
-	/* Fonction: ImageCreateFromBMP              */
-	/* Author:   DHKold                          */
-	/* Contact:  admin@dhkold.com                */
-	/* Date:     The 15th of June 2005           */
-	/* Version:  2.0B                            */
+	/* Fonction: ImageCreateFromBMP			  */
+	/* Author:   DHKold						  */
+	/* Contact:  admin@dhkold.com				*/
+	/* Date:	 The 15th of June 2005		   */
+	/* Version:  2.0B							*/
 	public static function createFromBmp($filename) {
 		//Ouverture du fichier en mode binaire
 		if (! $f1 = fopen($filename,"rb")) return FALSE;
@@ -468,9 +511,9 @@ class Image {
 		// If we have a specific transparent color
 		if ($trnprt_indx >= 0 && $trnprt_indx < imagecolorstotal($src_image)) {
 			// Get the original image's transparent color's RGB values
-			$trnprt_color    = imagecolorsforindex($src_image, $trnprt_indx);
+			$trnprt_color	= imagecolorsforindex($src_image, $trnprt_indx);
 			// Allocate the same color in the new image resource
-			$trnprt_indx    = imagecolorallocate($dst_image, $trnprt_color['red'], $trnprt_color['green'], $trnprt_color['blue']);
+			$trnprt_indx	= imagecolorallocate($dst_image, $trnprt_color['red'], $trnprt_color['green'], $trnprt_color['blue']);
 			// Completely fill the background of the new image with allocated color.
 			imagefill($dst_image, 0, 0, $trnprt_indx);
 			// Set the background color for new image to transparent
@@ -495,10 +538,10 @@ class Image {
 
 		return array(
 			 "left"   => abs($minX) - 1,
-			 "top"    => abs($minY) - 1,
+			 "top"	=> abs($minY) - 1,
 			 "width"  => $maxX - $minX,
 			 "height" => $maxY - $minY,
-			 "box"    => $rect
+			 "box"	=> $rect
 		);
 	}
 	
@@ -521,7 +564,7 @@ class Image {
 	 * @param boolean $returnAsString (if set true, returns the value separated by the separator character. Otherwise returns associative array)
 	 * @param string $seperator (to separate RGB values. Applicable only if second parameter is true.)
 	 * @return array or string (depending on second parameter. Returns False if invalid hex color value)
-	 */                                                                                                
+	 */																								
 	public static function hex2Rgb($hexStr, $returnAsString = false, $seperator = ',') {
 		$hexStr = preg_replace("/[^0-9A-Fa-f]/", '', $hexStr); // Gets a proper hex string
 		$rgbArray = array();
