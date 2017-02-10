@@ -19,6 +19,6 @@ echo $this->Form->hidden('field', ['value' => $field]);
 echo $this->Form->hidden('size', ['value' => $size]);
 echo $this->Form->hidden('redirect', ['value' => $redirect]);
 
-echo $this->FieldUploadImage->input($field, ['size' => $size, 'model' => $alias]);
+echo $this->FieldUploadImage->input($field, ['size' => $size, 'model' => $alias, 'fromUrl' => true]);
 echo $this->Form->submit('Upload Photo');
 echo $this->Form->end();

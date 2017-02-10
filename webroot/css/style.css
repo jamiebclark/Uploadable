@@ -36,3 +36,31 @@
 .jcrop-keymgr {
 	opacity: 0;	
 }
+
+.or-split {
+	position: relative;
+	display: flex;
+}
+.or-split-col {
+	flex-grow: 1;
+	flex-shrink: 0;
+	width: 50%;
+}
+.or-split-col:first-child {
+	padding-right: 20px;
+}
+.or-split-col:last-child {
+	padding-left: 20px;
+}
+.or-split-col:last-child:before {
+	content: "OR";
+	font-weight: bold;
+	opacity: .5;
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+}
+.or-split-col > .form-group {
+	margin-bottom: 0;
+}

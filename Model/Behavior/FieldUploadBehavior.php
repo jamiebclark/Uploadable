@@ -3,11 +3,15 @@ App::uses('Image', 'Uploadable.Lib');
 App::uses('Upload', 'Uploadable.Lib');
 App::uses('PluginConfig', 'Uploadable.Lib');
 App::uses('UrlPath', 'Uploadable.Lib');
+App::uses('FetchUrl', 'Uploadable.Lib');
+App::uses('RemoteUrlField', 'Uploadable.Lib');
 
 App::uses('CakeSession', 'Model/Datasource');
 
 App::uses('Hash', 'Utility');
 App::uses('Folder', 'Utility');
+App::uses('CakeNumber', 'Utility');
+
 
 class FieldUploadBehavior extends ModelBehavior {
 
@@ -39,6 +43,7 @@ class FieldUploadBehavior extends ModelBehavior {
 	const FROM_URL_TMP = 'from_web';
 
 	private $_sessionId;
+	private $_imgExtensions = ['jpg', 'jpeg', 'gif', 'png'];
 
 	public function __destructor() {
 		$this->_startUnlinkQueue();
@@ -151,50 +156,86 @@ class FieldUploadBehavior extends ModelBehavior {
 		}
 		$id = !empty($data['id']) ? $data['id'] : '';
 		foreach ($this->fields[$Model->alias] as $field => $config):
-			if (isset($data[$field]) && is_array($data[$field])) {
-				if (!empty($data[$field]['tmp_name'])) {
-					// Validates the extension of the uploaded file
-					if (!$this->validateFieldExtension($Model, $field, $data[$field]['name'])) {
-						return false;
-					}
-				} else if (!empty($data[$field]['url'])) {
-					// Pre-saves the remote file
-					try {
-						$this->storeFileFromUrl($Model, $id, $field, $data[$field]['url']);
-					} catch (Exception $e) {
-						$Model->invalidate("$field.url", $e->getMessage());
-						return false;
-					}
-					// Validates the extension of the remote file
-					if (!$this->validateFieldExtension($Model, $field, $data[$field]['name'], "$field.url")) {
-						return false;
-					}
+			$validateField = false;
+			$urlField = RemoteUrlField::field($field);
+			if (!empty($data[$field]['tmp_name'])) {
+				// File Upload
+				// ------------------------
+				$path = $data[$field]['tmp_name'];
+				$name = $data[$field]['name'];
+				$validateField = $field;
+			} else if (!empty($data[$urlField])) {
+				// Remote URL 
+				// ------------------------
+				$validateField = $urlField;
+
+				// Pre-saves the remote file
+				try {
+					$path = $this->storeFileFromUrl($Model, $id, $field, $data[$urlField]);
+				} catch (Exception $e) {
+					$this->invalidate($Model, $validateField, $e->getMessage());
+					return false;
+				}
+				$name = $data[$urlField];
+			}
+
+			if (!empty($validateField)) {
+				// Validates the extension of the uploaded file
+				if (!$this->validateFieldExtension($Model, $field, $name, $validateField)) {
+					return false;
+				}
+				if (!$this->validateFilesize($Model, $field, $path, $validateField)) {
+					return false;
 				}
 			}
 		endforeach;
 	}
 
-	public function validateFieldExtension($Model, $field, $filePath, $invalidateField = null) {
-		if (empty($invalidateField)) {
-			$invalidateField = $field;
+	public function validateFieldExtension($Model, $field, $filePath, $validateField = null) {
+		if (empty($validateField)) {
+			$validateField = $field;
 		}
+		$config = $this->fields[$Model->alias][$field];
 		$ext = UrlPath::getExtension($filePath);
-		if (!empty($this->fields[$Model->alias][$field]['extensions'])) {
-			if (!$this->matchExtension($ext, $this->fields[$Model->alias][$field]['extensions'])) {
-				$Model->invalidate($invalidateField, 'Invalid Extension: ' . strtoupper($ext));
+		if (empty($ext)) {
+			$ext = Image::mimeExtension(mime_content_type($filePath));
+		}
+		if (!empty($config['extensions'])) {
+			$exts = $config['extensions'];
+		} else if ($config['isImage']) {
+			$exts = $this->_imgExtensions;
+		}
+		if (!empty($exts)) {
+			if (is_array($exts)) {
+				$exts = implode(', ', $exts);
+			}
+			if (!$this->matchExtension($ext, $exts)) {
+				$this->invalidate(
+					$Model,
+					$validateField, 
+					sprintf('Invalid file type: %s. (Please only select: %s)', strtoupper($ext), $exts)
+				);
 				return false;
 			}
 		}
 		return true;
 	}
 
-	protected function matchExtension($ext, $exts) {
-		$ext = strtolower($ext);
-		if (!is_array($exts)) {
-			$exts = array_map('trim', explode(',', $exts));
+	public function validateFilesize($Model, $field, $filePath, $validateField = null) {
+		if (empty($validateField)) {
+			$validateField = $field;
 		}
-		$exts = array_map('strtolower', $exts);
-		return in_array($ext, $exts);
+		$filesize = filesize($filePath);
+		$uploadLimit = Upload::getUploadLimit();
+		// Detects user-specific file size
+		if (!empty($this->fields[$Model->alias][$field]['maxSize']) && $this->fields[$Model->alias][$field]['maxSize'] < $uploadLimit) {
+			$uploadLimit = $this->fields[$Model->alias][$field]['maxSize'];
+		}
+		if ($filesize >= $uploadLimit) {
+			$this->invalidate($Model, $validateField, CakeNumber::toReadableSize($filesize) . ' is too big');
+			return false;
+		}
+		return true;
 	}
 
 	public function beforeSave(Model $Model, $options = []) {
@@ -207,19 +248,18 @@ class FieldUploadBehavior extends ModelBehavior {
 		}
 		$id = !empty($data['id']) ? $data['id'] : '';
 		foreach ($this->fields[$Model->alias] as $field => $config):
-			if (isset($data[$field]) && is_array($data[$field])) {
-				// If any files have been uploaded, queue them for upload
-				if (!empty($data[$field]['tmp_name'])) {
-					$this->_addUploadQueue($Model, $id, $field, $data[$field]);
-				} else if (!empty($data[$field]['url'])) {
-					$this->_addUploadFromUrlQueue($Model, $id, $field, $data[$field]['url']);
-				}
-				// If the files have been marked for deletion, queue them for deletion
-				if (!empty($data[$field]['delete'])) {
-					$this->_addDeleteQueue($Model, $id, $field);
-				} 
-				unset($data[$field]);
+			$urlField = RemoteUrlField::field($field);
+			// If any files have been uploaded, queue them for upload
+			if (!empty($data[$field]['tmp_name'])) {
+				$this->_addUploadQueue($Model, $id, $field, $data[$field]);
+			} else if (!empty($data[$urlField])) {
+				$this->_addUploadFromUrlQueue($Model, $id, $field, $data[$urlField]);
 			}
+			// If the files have been marked for deletion, queue them for deletion
+			if (!empty($data[$field]['delete'])) {
+				$this->_addDeleteQueue($Model, $id, $field);
+			} 
+			unset($data[$field]);
 		endforeach;
 
 		if (!empty($data['FieldUploadCropCopy'])) {
@@ -339,7 +379,7 @@ class FieldUploadBehavior extends ModelBehavior {
 		$sessionId = $this->getSessionId();
 		$filename = $this->_getFromUrlTmpPath($Model, $id, $field, $url);
 		try {
-			$this->_putUrl($url, $filename);
+			FetchUrl::put($url, $filename);
 		} catch (Exception $e) {
 			throw $e;
 			return false;
@@ -349,41 +389,22 @@ class FieldUploadBehavior extends ModelBehavior {
 	}
 
 	protected function getStoredFileFromUrl($Model, $id, $field, $url) {
-		$sessionId = $this->_getSessionId();
+		$sessionId = $this->getSessionId();
 		if (empty($this->_filesFromUrl[$sessionId][$Model->alias][$field][$url])) {
 			$this->storeFileFromUrl($Model, $id, $field, $url);			
 		}
 		return $this->_filesFromUrl[$sessionId][$Model->alias][$field][$url];
 	}
 
-/**
- * Stores a file from a remote location to a local location
- *
- * @param string $url The remote url
- * @param string $dst The destination path
- * @return bool
- * @throws Exception if it can't place the contents
- **/
-	private function _putUrl($url, $dst) {
-		$content = $this->_getUrl($url);
-		if (!file_put_contents($dst, $content)) {
-			throw new Exception("Could not save content of $url to $tmpFile");
+	protected function purgeStoredFilesFromUrl($Model) {
+		$sessionId = $this->getSessionId();
+		if (!empty($this->_filesFromUrl[$sessionId][$Model->alias])) {
+			foreach ($this->_filesFromUrl[$sessionId][$Model->alias] as $field => $files) {
+				foreach ($files as $url => $filePath) {
+					unlink($filePath);
+				}
+			}
 		}
-		return true;
-	}
-
-/**
- * Retrieves the contents of a remote URL
- * 
- * @param string $url The remote file URL
- * @return mixed The content of the file
- * @throws Exception if cannot retrieve
- **/
-	private function _getUrl($url) {
-		if (!($content = file_get_contents($url))) {
-			throw new Exception("Could not retrieve file: $url");
-		}
-		return $content;
 	}
 
 	public function setUploadFieldWebRoot(Model $Model, $root) {
@@ -685,6 +706,28 @@ class FieldUploadBehavior extends ModelBehavior {
 		$this->_uploadQueue[$Model->alias][$id][$field] = $fieldData;
 	}
 
+	protected function invalidate($Model, $field, $message = null) {
+		$this->purgeStoredFilesFromUrl($Model);
+		return $Model->invalidate($field, $message);
+	}
+
+/**
+ * Matches a given extension to a group of extensions
+ *
+ * @param string $ext The given file extension
+ * @param string|array A comma-separated list of an array of extensions
+ * @return bool True if there's a match, false if not
+ **/
+	protected function matchExtension($ext, $exts) {
+		$ext = strtolower($ext);
+		if (!is_array($exts)) {
+			$exts = array_map('trim', explode(',', $exts));
+		}
+		$exts = array_map('strtolower', $exts);
+		return in_array($ext, $exts);
+	}
+
+
 /**
  * Uploads all files in the queue
  *
@@ -719,6 +762,7 @@ class FieldUploadBehavior extends ModelBehavior {
 			endforeach;
 			unset($this->_uploadFromUrlQueue[$Model->alias][$id]);
 		endif;
+		$this->purgeStoredFilesFromUrl($Model);
 	}
 
 	private function _addCropCopyQueue(Model $Model, $id, $field, $size, $attrs) {
