@@ -4,6 +4,7 @@
  *
  **/
 App::uses('Folder', 'Utility');
+App::uses('Image', 'Uploadable.Lib');
 
 class UrlPath {
 	static public function normalizeFilePath($path) {
@@ -31,7 +32,20 @@ class UrlPath {
 	}
 
 	static public function getExtension($path) {
-		$info = pathinfo($path);
-		return !empty($info['extension']) ? $info['extension'] : false;
+		if (is_file($path)) {
+			$info = pathinfo($path);
+			$ext = !empty($info['extension']) ? $info['extension'] : false;
+			if (empty($ext)) {
+				$ext = Image::mimeExtension(mime_content_type($path));
+			}
+		} else {
+			$parts = explode('.', $path);
+			if (count($parts) > 1) {
+				$ext = array_pop($parts);
+			}
+		}
+		$parts = explode('?', $ext);
+		$ext = array_shift($parts);
+		return $ext;
 	}
 }

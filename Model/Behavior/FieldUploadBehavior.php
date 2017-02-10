@@ -196,10 +196,9 @@ class FieldUploadBehavior extends ModelBehavior {
 			$validateField = $field;
 		}
 		$config = $this->fields[$Model->alias][$field];
+		debug(compact('filePath') + ['isFile' => is_file($filePath)]);
+
 		$ext = UrlPath::getExtension($filePath);
-		if (empty($ext)) {
-			$ext = Image::mimeExtension(mime_content_type($filePath));
-		}
 		if (!empty($config['extensions'])) {
 			$exts = $config['extensions'];
 		} else if ($config['isImage']) {
@@ -360,7 +359,7 @@ class FieldUploadBehavior extends ModelBehavior {
 			throw new Exception("Could not create directory to store uploadFieldFromUrl");
 		}
 		$path = $dir . $Model->alias . '-' . $id . '-' . $field . '-' . time();
-		if ($ext = UrlPath::getExtension($path)) {
+		if ($ext = UrlPath::getExtension($url)) {
 			$path .= '.' . $ext;
 		}
 		return $path;
@@ -397,11 +396,12 @@ class FieldUploadBehavior extends ModelBehavior {
 	}
 
 	protected function purgeStoredFilesFromUrl($Model) {
+		debug(Debugger::trace());
 		$sessionId = $this->getSessionId();
 		if (!empty($this->_filesFromUrl[$sessionId][$Model->alias])) {
 			foreach ($this->_filesFromUrl[$sessionId][$Model->alias] as $field => $files) {
 				foreach ($files as $url => $filePath) {
-					unlink($filePath);
+					//unlink($filePath);
 				}
 			}
 		}
