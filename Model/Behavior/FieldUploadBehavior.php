@@ -196,8 +196,6 @@ class FieldUploadBehavior extends ModelBehavior {
 			$validateField = $field;
 		}
 		$config = $this->fields[$Model->alias][$field];
-		debug(compact('filePath') + ['isFile' => is_file($filePath)]);
-
 		$ext = UrlPath::getExtension($filePath);
 		if (!empty($config['extensions'])) {
 			$exts = $config['extensions'];
@@ -396,7 +394,6 @@ class FieldUploadBehavior extends ModelBehavior {
 	}
 
 	protected function purgeStoredFilesFromUrl($Model) {
-		debug(Debugger::trace());
 		$sessionId = $this->getSessionId();
 		if (!empty($this->_filesFromUrl[$sessionId][$Model->alias])) {
 			foreach ($this->_filesFromUrl[$sessionId][$Model->alias] as $field => $files) {
