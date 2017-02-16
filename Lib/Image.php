@@ -305,7 +305,7 @@ class Image {
 		}
 		$dstImg = imagecreatetruecolor($dstW, $dstH);
 		try {
-			imagecopyresized($dstImg, $srcImg, 0, 0, $srcX, $srcY, $dstW, $dstH, $srcW, $srcH);
+			@imagecopyresized($dstImg, $srcImg, 0, 0, $srcX, $srcY, $dstW, $dstH, $srcW, $srcH);
 		} catch (Exception $e) {
 			throw new Exception('Image copying failed: ' . $e->getMessage());
 		}
