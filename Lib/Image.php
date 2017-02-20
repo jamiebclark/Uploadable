@@ -57,7 +57,10 @@ class Image {
 		}
 
 		$image = self::createFromFile($filename);
-		$exif = exif_read_data($filename);
+		if (!($exif = @exif_read_data($filename))) {
+			return false;
+		}
+
 		$angle = 0;
 
 		if (!empty($exif['Orientation'])) {
