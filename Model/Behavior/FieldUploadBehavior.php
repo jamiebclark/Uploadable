@@ -375,6 +375,7 @@ class FieldUploadBehavior extends ModelBehavior {
 	protected function storeFileFromUrl($Model, $id, $field, $url) {
 		$sessionId = $this->getSessionId();
 		$filename = $this->_getFromUrlTmpPath($Model, $id, $field, $url);
+		App::uses('FetchUrl', 'Uploadable.Lib');
 		try {
 			FetchUrl::put($url, $filename);
 		} catch (Exception $e) {

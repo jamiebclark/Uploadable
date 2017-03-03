@@ -32,7 +32,13 @@ class UrlPath {
 	}
 
 	static public function getExtension($path) {
-		if (is_file($path)) {
+		$ext = null;
+		if (Image::isData($path)) {
+			$data = Image::splitData($path);
+			if (!empty($data['mime'])) {
+				$ext = Image::mimeExtension($data['mime']);
+			}
+		} else if (is_file($path)) {
 			$info = pathinfo($path);
 			$ext = !empty($info['extension']) && $info['extension'] != 'tmp' ? $info['extension'] : false;
 			if (empty($ext)) {
@@ -44,8 +50,10 @@ class UrlPath {
 				$ext = array_pop($parts);
 			}
 		}
-		$parts = explode('?', $ext);
-		$ext = array_shift($parts);
+		if (!empty($ext)) {
+			$parts = explode('?', $ext);
+			$ext = array_shift($parts);
+		}
 		return $ext;
 	}
 }

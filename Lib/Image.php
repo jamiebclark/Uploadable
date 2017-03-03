@@ -84,18 +84,32 @@ class Image {
 		return null;
 	}
 
-	public static function createFromFile($filename) {
-		ini_set("memory_limit", "1G");
+	public static function isData($filename) {
+		return strpos($filename, 'data:') === 0;
 
-	//Generates an image resource based on a variety of image types
-		if (!is_file($filename)) {
-			return false;
+	}
+
+	public static function createFromData($dataStream) {
+		if ($data = self::splitData($dataStream)) {
+			return self::createFromMime($data['data'], $data['mime']);	
 		}
-		if (($size = getimagesize($filename)) === false) {
-			return false;
+		return null;		
+	}
+
+	public static function splitData($dataStream) {
+		if (!preg_match('/data:([^;]+);([\S]+)/', $dataStream, $matches)) {
+			return null;
 		}
+		list($stream, $mime, $data) = $matches;
+		if (preg_match('/base64,([\S]+)/', $data, $matches)) {
+			$data = base64_decode($matches[1]);
+		}
+		return compact('data', 'mime');
+	}
+
+	public static function createFromMime($filename, $mime) {
 		$img = false;
-		switch($size['mime']) {
+		switch($mime) {
 			case 'image/jpg':
 			case 'image/jpeg':
 			case 'image/pjpeg':
@@ -108,37 +122,29 @@ class Image {
 			break;
 			case 'image/png':
 				$img = imagecreatefrompng($filename);
-				// $bgColor = imagecolorallocate($pngImg, 255,255,255);
-				/*
-				imagecolortransparent($pngImg, $bgColor);
-				
-				// turning off alpha blending (to ensure alpha channel information 
-				// is preserved, rather than removed (blending with the rest of the 
-				// image in the form of black))
-				imagealphablending($img, false);
-				
-				// turning on alpha channel information saving (to ensure the full range 
-				// of transparency is preserved)
-				imagesavealpha($img, true);
-				*/
-
-				/*
-				list($width, $height) = getimagesize($filename);
-				$img = imagecreatetruecolor($width, $height);
-				imagefilledrectangle($img, 0, 0, $width, $height, $bgColor);
-				imagecopy($img, $pngImg, 0, 0, 0, 0, $width, $height);
-				*/
 			break;
 			case 'image/bmp':
 				$img = self::createFromBmp($filename);
 			break;
 		}
-
-		//$transparentColor = imagecolorallocate($img, 255, 0, 0);
-		//imagecolortransparent($img, $transparentColor);
-		//imagefilledrectangle($img2, 0, 0, $newWidth, $newHeight, $transparentColor);
-
 		return $img;
+	}
+
+	public static function createFromFile($filename) {
+		ini_set("memory_limit", "1G");
+		//Generates an image resource based on a variety of image types
+		
+		if (self::isData($filename)) {
+			return self::createFromData($filename);
+		}
+
+		if (!is_file($filename)) {
+			return false;
+		}
+		if (($size = getimagesize($filename)) === false) {
+			return false;
+		}
+		return self::createFromMime($filename, $size['mime']);
 	}
 
 /**
