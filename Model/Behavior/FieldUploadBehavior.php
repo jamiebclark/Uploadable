@@ -285,10 +285,11 @@ class FieldUploadBehavior extends ModelBehavior {
 			$this->_updateQueueModelIdKeys($Model, $id);
 		}
 		$this->_startUploadQueue($Model, $id);		// Uploads anything found in beforeSave
+		$this->_startUnlinkQueue();
+
 		$this->_startUploadFromUrlQueue($Model, $id);
 		$this->_startCropCopyQueue($Model, $id);	// Crops and copies anything set in beforeSave
 		$this->_startDeleteQueue($Model, $id);		// Deletes anything marked for deletion
-		$this->_startUnlinkQueue();
 
 		return parent::afterSave($Model, $created, $options);
 	}
@@ -871,7 +872,6 @@ class FieldUploadBehavior extends ModelBehavior {
 
 		$File = new File($data['name']);
 		$ext = $File->ext();
-
 		if ($ext == 'pdf') {
 			$uniqId = md5(uniqid(time(), true));
 
@@ -963,7 +963,6 @@ class FieldUploadBehavior extends ModelBehavior {
 		if (!empty($config['isImage'])) {
 			Image::fixOrientation($data['tmp_name']);
 		}
-
 		if ($result = Upload::copy($data, $dirs, $config)) {
 			if (!empty($config['gitignore'])) {
 				Upload::gitIgnore($this->getFieldDir($Model, $field));

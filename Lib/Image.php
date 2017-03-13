@@ -57,7 +57,8 @@ class Image {
 		}
 
 		$image = self::createFromFile($filename);
-		if (!($exif = @exif_read_data($filename))) {
+
+		if (!function_exists("exif_read_data") || !($exif = @exif_read_data($filename))) {
 			return false;
 		}
 
