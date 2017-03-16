@@ -1,3 +1,3 @@
 # Documentation
-1. [Installation](Documenation/Installation.md)
-2. [FieldUpload](Documenation/FieldUpload.md) (Component, Behavior, and Helper)
+1. [Installation](Documentation/Installation.md)
+2. [FieldUpload](Documentation/FieldUpload.md) (Component, Behavior, and Helper)
