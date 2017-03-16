@@ -1,2 +1,2 @@
 # Documentation
-1. [Installation](Installation.md)
+1. [Installation](Documenation/Installation.md)
