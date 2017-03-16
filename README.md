@@ -7,7 +7,7 @@ A CakePHP 2.x Plugin developed to help with uploading files and images from a fo
 * Imagick is required for some optional PDF functionality
 
 ## Features
-* Resize and crop an image to a variety of sizes
+* *[FieldUpload Behavior and Helper](/tree/master/Docs/Documentation/FieldUpload)*: Save, resize and crop an image to a variety of sizes
 
 ## Documentation
 For documentation, see the [Docs](Docs/Home.md) directory of this repository.
